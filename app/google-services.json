@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885789740701",
+    "project_id": "coreflexpilates-e1f1a",
+    "storage_bucket": "coreflexpilates-e1f1a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885789740701:android:40f0e6b3e43a8f19c78e74",
+        "android_client_info": {
+          "package_name": "com.example.coreflexpilates"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNXw2ZittY5Fql17AZHn6zUS3wjYCHIlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
