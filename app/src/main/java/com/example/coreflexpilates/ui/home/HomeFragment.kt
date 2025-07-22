@@ -113,8 +113,10 @@ class HomeFragment : Fragment() {
             .addOnSuccessListener { result ->
                 allLessons.clear()
                 for (doc in result) {
-                    val lesson = doc.toObject(Lesson::class.java)
-                    allLessons.add(lesson)
+                    val lesson = doc.toObject(Lesson::class.java)?.copy(classId = doc.id)
+                    if (lesson != null) {
+                        allLessons.add(lesson)
+                    }
                 }
                 filterLessonsByDate(selectedDate)
             }
@@ -122,6 +124,7 @@ class HomeFragment : Fragment() {
                 Log.e("HomeFragment", "Error fetching lessons", e)
             }
     }
+
 
     private fun filterLessons(level: String) {
         val filtered = allLessons.filter { it.title == level }

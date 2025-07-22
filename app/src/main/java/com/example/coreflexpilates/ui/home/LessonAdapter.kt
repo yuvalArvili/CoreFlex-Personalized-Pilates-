@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.model.Lesson
@@ -26,9 +27,18 @@ class LessonAdapter :
 
     override fun onBindViewHolder(holder: LessonViewHolder, position: Int) {
         val lesson = lessons[position]
+
         holder.title.text = lesson.title
         holder.description.text =
             "Date: ${lesson.schedule.date}, Time: ${lesson.schedule.time}, Location: ${lesson.location}"
+
+        // navigate to lessonDetails
+        holder.itemView.setOnClickListener {
+            val action = HomeFragmentDirections
+                .actionHomeFragmentToLessonDetailsFragment(lesson.classId)
+
+            it.findNavController().navigate(action)
+        }
     }
 
     override fun getItemCount() = lessons.size
