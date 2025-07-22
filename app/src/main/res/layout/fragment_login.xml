@@ -4,7 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    android:background="@drawable/gradient_background">
+    android:background="@color/background">
+
+    <ImageView
+        android:id="@+id/imageLogo"
+        android:layout_width="250dp"
+        android:layout_height="200dp"
+        android:layout_marginBottom="24dp"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:background="@drawable/logo"/>
+
 
     <EditText
         android:id="@+id/editTextEmail"

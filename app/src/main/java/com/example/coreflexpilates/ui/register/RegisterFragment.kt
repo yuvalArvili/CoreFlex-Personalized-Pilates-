@@ -29,6 +29,7 @@ class RegisterFragment : Fragment() {
         val emailEdit = view.findViewById<EditText>(R.id.editTextEmail)
         val passwordEdit = view.findViewById<EditText>(R.id.editTextPassword)
         val confirmEdit = view.findViewById<EditText>(R.id.editTextConfirmPassword)
+        val roleRadioGroup = view.findViewById<RadioGroup>(R.id.roleRadioGroup)
         val buttonRegister = view.findViewById<Button>(R.id.buttonRegister)
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
 
@@ -58,6 +59,10 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            val selectedRoleId = roleRadioGroup.checkedRadioButtonId
+            val role = if (selectedRoleId == R.id.radioAdmin) "admin" else "user"
+
+
             progressBar.visibility = View.VISIBLE
             buttonRegister.isEnabled = false
 
@@ -80,7 +85,7 @@ class RegisterFragment : Fragment() {
                         "uid" to uid,
                         "name" to name,
                         "email" to email,
-                        "role" to "user"
+                        "role" to role
                     )
 
                     Log.d(TAG, "Saving to collection: users, document: $uid")

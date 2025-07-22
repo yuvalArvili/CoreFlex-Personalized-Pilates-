@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@color/background">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/editTrainerName"
+            android:hint="Trainer Name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/editTrainerEmail"
+            android:hint="Email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Specialties:"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <CheckBox
+            android:id="@+id/checkboxBeginners"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Beginners" />
+
+        <CheckBox
+            android:id="@+id/checkboxIntermediate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Intermediate" />
+
+        <CheckBox
+            android:id="@+id/checkboxAdvanced"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Advanced" />
+
+        <Button
+            android:id="@+id/buttonSaveTrainer"
+            android:text="Save Trainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/button_background" />
+    </LinearLayout>
+</ScrollView>

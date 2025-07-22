@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="20dp">
+
+        <EditText
+            android:id="@+id/editTitle"
+            android:hint="Lesson Title"
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/editDate"
+            android:hint="Select Date"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/editTime"
+            android:hint="Select Time"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/editLocation"
+            android:hint="Location"
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/editCapacity"
+            android:hint="Capacity"
+            android:inputType="number"
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:textColor="@color/black"
+            android:textColorHint="@color/black"
+            android:padding="14dp"
+            android:textSize="16sp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Spinner for Trainer Selection -->
+        <Spinner
+            android:id="@+id/spinnerTrainer"
+
+            android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_background"
+            android:padding="12dp"
+            android:layout_marginHorizontal="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="16dp"
+            android:spinnerMode="dropdown" />
+
+        <Button
+            android:id="@+id/buttonSaveLesson"
+            android:text="Save Lesson"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_background"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

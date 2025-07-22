@@ -50,6 +50,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp" />
 
+        <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/logout"
+            android:visibility="visible"
+            android:layout_marginTop="-8dp"
+            android:layout_marginEnd="-6dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <!-- EditText for Goal -->
         <EditText
             android:id="@+id/editGoal"
@@ -77,7 +88,42 @@
             app:layout_constraintTop_toBottomOf="@id/editGoal"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"/>
+            android:layout_marginTop="24dp" />
+
+        <!-- Toggle Between Future/Past Lessons -->
+        <LinearLayout
+            android:id="@+id/toggleContainer"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/buttonSave"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonUpcoming"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="UPCOMING"
+                android:background="@drawable/toggle_button_selector"
+                android:textColor="@color/black"
+                app:cornerRadius="0dp"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPast"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="PAST"
+                android:background="@drawable/toggle_button_selector"
+                android:textColor="@color/black"
+                app:cornerRadius="0dp"
+                app:iconGravity="textStart" />
+        </LinearLayout>
 
         <!-- No Lessons Text -->
         <TextView
@@ -86,9 +132,9 @@
             android:layout_height="wrap_content"
             android:text="You haven't booked any lessons yet."
             android:textAlignment="center"
-            android:textColor="#888888"
+            android:textColor="@color/grey"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/buttonSave"
+            app:layout_constraintTop_toBottomOf="@id/toggleContainer"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="24dp" />

@@ -7,8 +7,11 @@ import android.widget.*
 import androidx.fragment.app.Fragment
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.MainActivity
+import com.example.coreflexpilates.AdminActivity
 import com.example.coreflexpilates.ui.register.RegisterFragment
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 class LoginFragment : Fragment() {
 
@@ -47,13 +50,28 @@ class LoginFragment : Fragment() {
         }
 
         auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    startActivity(Intent(requireContext(), MainActivity::class.java))
-                    requireActivity().finish()
-                } else {
-                    Toast.makeText(requireContext(), "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                }
+            .addOnSuccessListener {
+                val uid = auth.currentUser?.uid ?: return@addOnSuccessListener
+
+                val firestore = FirebaseFirestore.getInstance()
+                firestore.collection("users").document(uid)
+                    .get()
+                    .addOnSuccessListener { doc ->
+                        val role = doc.getString("role")
+                        if (role == "admin") {
+                            startActivity(Intent(requireContext(), AdminActivity::class.java))
+                        } else {
+                            startActivity(Intent(requireContext(), MainActivity::class.java))
+                        }
+                        requireActivity().finish()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(requireContext(), "Failed to load user data: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
             }
+            .addOnFailureListener { e ->
+                Toast.makeText(requireContext(), "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+
     }
 }
