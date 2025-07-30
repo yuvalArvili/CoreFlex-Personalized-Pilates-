@@ -12,6 +12,7 @@ import com.example.coreflexpilates.MainActivity
 import com.example.coreflexpilates.ui.login.LoginFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 
 class RegisterFragment : Fragment() {
 
@@ -62,51 +63,49 @@ class RegisterFragment : Fragment() {
             val selectedRoleId = roleRadioGroup.checkedRadioButtonId
             val role = if (selectedRoleId == R.id.radioAdmin) "admin" else "user"
 
-
             progressBar.visibility = View.VISIBLE
             buttonRegister.isEnabled = false
-
-            Log.d(TAG, "Trying to register user with email: $email")
 
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
                     val uid = auth.currentUser?.uid
-                    Log.d(TAG, "User registered, UID: $uid")
-
                     if (uid == null) {
-                        Log.e(TAG, "auth.currentUser?.uid returned null")
                         Toast.makeText(requireContext(), "Registration failed (no UID)", Toast.LENGTH_SHORT).show()
                         progressBar.visibility = View.GONE
                         buttonRegister.isEnabled = true
                         return@addOnSuccessListener
                     }
 
-                    val userData = hashMapOf(
-                        "uid" to uid,
-                        "name" to name,
-                        "email" to email,
-                        "role" to role
-                    )
+                    // ✅ קבלת הטוקן
+                    FirebaseMessaging.getInstance().token
+                        .addOnSuccessListener { token ->
+                            val userData = hashMapOf(
+                                "uid" to uid,
+                                "name" to name,
+                                "email" to email,
+                                "role" to role,
+                                "fcmToken" to token
+                            )
 
-                    Log.d(TAG, "Saving to collection: users, document: $uid")
-                    Log.d(TAG, "Data: $userData")
-
-                    firestore.collection("users").document(uid).set(userData)
-                        .addOnSuccessListener {
-                            Log.d(TAG, "User data saved to Firestore successfully")
-                            Toast.makeText(requireContext(), "Registration successful!", Toast.LENGTH_SHORT).show()
-                            startActivity(Intent(requireContext(), MainActivity::class.java))
-                            requireActivity().finish()
+                            firestore.collection("users").document(uid).set(userData)
+                                .addOnSuccessListener {
+                                    Toast.makeText(requireContext(), "Registration successful!", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(requireContext(), MainActivity::class.java))
+                                    requireActivity().finish()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(requireContext(), "Firestore save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    progressBar.visibility = View.GONE
+                                    buttonRegister.isEnabled = true
+                                }
                         }
                         .addOnFailureListener { e ->
-                            Log.e(TAG, "Failed to save user data to Firestore", e)
-                            Toast.makeText(requireContext(), "Firestore save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Token error: ${e.message}", Toast.LENGTH_SHORT).show()
                             progressBar.visibility = View.GONE
                             buttonRegister.isEnabled = true
                         }
                 }
                 .addOnFailureListener { e ->
-                    Log.e(TAG, "Registration failed", e)
                     Toast.makeText(requireContext(), "Auth failed: ${e.message}", Toast.LENGTH_SHORT).show()
                     progressBar.visibility = View.GONE
                     buttonRegister.isEnabled = true

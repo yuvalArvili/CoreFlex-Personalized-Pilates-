@@ -17,31 +17,69 @@ class EditLessonActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddLessonBinding
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var lessonId: String
-    private var trainerList = listOf("trainer1", "trainer2", "trainer3") // Load dynamically if needed
+
+    private val trainerNameList = mutableListOf<String>()                   // for spinner
+    private val trainerNameToIdMap = mutableMapOf<String, String>()        // name → id
+    private val trainerIdToNameMap = mutableMapOf<String, String>()        // id → name
+    private val lessonLevels = listOf("choose level...", "PILATES | beginners", "PILATES +| intermediate", "PILATES ++| advanced")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddLessonBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        supportActionBar?.title = "Edit Lesson"
-
-        // Get lessonId from intent
         lessonId = intent.getStringExtra("lessonId") ?: return
 
-        setupTrainerSpinner()
+        setupLessonLevelSpinner()
         setupPickers()
-        loadLesson()
+        loadTrainers {
+            loadLesson()
+        }
 
         binding.buttonSaveLesson.setOnClickListener {
             updateLesson()
         }
     }
 
-    private fun setupTrainerSpinner() {
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, trainerList)
+    private fun setupLessonLevelSpinner() {
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, lessonLevels)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.spinnerTrainer.adapter = adapter
+        binding.spinnerLessonLevel.adapter = adapter
+    }
+
+    private fun loadTrainers(onComplete: () -> Unit) {
+        firestore.collection("trainers")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                trainerNameList.clear()
+                trainerNameToIdMap.clear()
+                trainerIdToNameMap.clear()
+
+                for (doc in snapshot) {
+                    val name = doc.getString("name")
+                    val id = doc.id
+                    if (!name.isNullOrEmpty()) {
+                        trainerNameList.add(name)
+                        trainerNameToIdMap[name] = id
+                        trainerIdToNameMap[id] = name
+                    }
+                }
+
+                val adapter = ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    trainerNameList
+                )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                binding.spinnerTrainer.adapter = adapter
+
+                onComplete()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Failed to load trainers", Toast.LENGTH_SHORT).show()
+                finish()
+            }
     }
 
     private fun setupPickers() {
@@ -55,13 +93,18 @@ class EditLessonActivity : AppCompatActivity() {
             .addOnSuccessListener { doc ->
                 val lesson = doc.toObject(Lesson::class.java)
                 if (lesson != null) {
-                    binding.editTitle.setText(lesson.title)
+                    val titleIndex = lessonLevels.indexOf(lesson.title)
+                    if (titleIndex != -1) {
+                        binding.spinnerLessonLevel.setSelection(titleIndex)
+                    }
+
                     binding.editDate.setText(lesson.schedule.date)
                     binding.editTime.setText(lesson.schedule.time)
-                    binding.editLocation.setText(lesson.location)
                     binding.editCapacity.setText(lesson.capacity.toString())
 
-                    val trainerIndex = trainerList.indexOf(lesson.trainerId)
+                    // get trainer name from ID
+                    val trainerName = trainerIdToNameMap[lesson.trainerId]
+                    val trainerIndex = trainerNameList.indexOf(trainerName)
                     if (trainerIndex != -1) {
                         binding.spinnerTrainer.setSelection(trainerIndex)
                     }
@@ -74,15 +117,15 @@ class EditLessonActivity : AppCompatActivity() {
     }
 
     private fun updateLesson() {
-        val title = binding.editTitle.text.toString().trim()
+        val title = binding.spinnerLessonLevel.selectedItem.toString()
         val date = binding.editDate.text.toString().trim()
         val time = binding.editTime.text.toString().trim()
-        val location = binding.editLocation.text.toString().trim()
         val capacityStr = binding.editCapacity.text.toString().trim()
-        val trainerId = binding.spinnerTrainer.selectedItem.toString()
+        val trainerName = binding.spinnerTrainer.selectedItem?.toString()?.trim() ?: ""
+        val trainerId = trainerNameToIdMap[trainerName]
 
-        if (title.isEmpty() || date.isEmpty() || time.isEmpty() ||
-            location.isEmpty() || capacityStr.isEmpty() || trainerId.isEmpty()
+        if (title == "choose level..." || date.isEmpty() || time.isEmpty() ||
+            capacityStr.isEmpty() || trainerId.isNullOrEmpty()
         ) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
@@ -97,8 +140,8 @@ class EditLessonActivity : AppCompatActivity() {
         val updatedLesson = Lesson(
             title = title,
             schedule = Schedule(date = date, day = "", time = time),
-            location = location,
             capacity = capacity,
+            bookedCount = 0,
             trainerId = trainerId,
             classId = lessonId
         )
@@ -135,5 +178,10 @@ class EditLessonActivity : AppCompatActivity() {
             val timeStr = "%02d:%02d".format(h, m)
             binding.editTime.setText(timeStr)
         }, hour, minute, true).show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }

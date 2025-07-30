@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/adminRoot"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
     android:background="@color/background">
 
     <LinearLayout
@@ -12,30 +12,51 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="end"
-        android:layout_marginBottom="8dp">
+        android:layout_marginTop="18dp"
+        android:layout_marginRight="10dp">
 
         <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/logout"
+            android:visibility="visible"
+            android:layout_marginEnd="60dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonAddTrainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add Trainer"
-            android:background="@drawable/button_background"
             android:textColor="@android:color/white"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/pink"
             android:layout_marginEnd="8dp"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/fabAddLesson"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add Lesson"
-            android:background="@drawable/button_background"
-            android:textColor="@android:color/white"/>
+            android:textColor="@android:color/white"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/pink" />
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewLessons"
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingTop="8dp"/>
+        android:background="@android:color/transparent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/adminBottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:menu="@menu/admin_bottom_nav_menu" />
+
+
 </LinearLayout>

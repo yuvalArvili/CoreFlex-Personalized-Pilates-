@@ -16,21 +16,44 @@
         <action
             android:id="@+id/action_homeFragment_to_lessonDetailsFragment"
             app:destination="@id/lessonDetailsFragment" />
+
+        <!-- ✅ Action to InviteFriendsFragment -->
+        <action
+            android:id="@+id/action_homeFragment_to_inviteFriendsFragment"
+            app:destination="@id/inviteFriendsFragment" />
     </fragment>
 
-    <!-- Dashboard -->
+    <!-- Profile Fragment -->
     <fragment
         android:id="@+id/navigation_dashboard"
         android:name="com.example.coreflexpilates.ui.profile.ProfileFragment"
-        android:label="@string/title_dashboard"
+        android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
 
-    <!-- Notifications -->
+    <!-- Notifications Fragment -->
     <fragment
         android:id="@+id/navigation_notifications"
         android:name="com.example.coreflexpilates.ui.notifications.NotificationsFragment"
         android:label="@string/title_notifications"
         tools:layout="@layout/fragment_notifications" />
+
+    <!-- Explore (Friends) Fragment -->
+    <fragment
+        android:id="@+id/navigation_explore"
+        android:name="com.example.coreflexpilates.ui.friends.FriendsListFragment"
+        android:label="@string/title_explore"
+        tools:layout="@layout/fragment_friends_list" />
+
+    <!-- ✅ Invite Friends Fragment -->
+    <fragment
+        android:id="@+id/inviteFriendsFragment"
+        android:name="com.example.coreflexpilates.ui.friends.InviteFriendsFragment"
+        android:label="Invite Friends"
+        tools:layout="@layout/fragment_invite_friends">
+        <argument
+            android:name="lessonId"
+            app:argType="string" />
+    </fragment>
 
     <!-- Lesson Details Fragment -->
     <fragment
@@ -41,5 +64,20 @@
         <argument
             android:name="lessonId"
             app:argType="string" />
+        <action
+            android:id="@+id/action_lessonDetailsFragment_to_trainerDetailsFragment"
+            app:destination="@id/trainerDetailsFragment" />
     </fragment>
+
+    <!-- Trainer Details Fragment -->
+    <fragment
+        android:id="@+id/trainerDetailsFragment"
+        android:name="com.example.coreflexpilates.ui.trainer.TrainerDetailsFragment"
+        android:label="Trainer Details"
+        tools:layout="@layout/fragment_trainer_details">
+        <argument
+            android:name="trainerId"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

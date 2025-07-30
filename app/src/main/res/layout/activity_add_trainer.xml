@@ -6,10 +6,40 @@
     android:background="@color/background">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="80dp">
 
+        <!-- Image preview -->
+        <FrameLayout
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/circle_gray_background">
+
+            <ImageView
+                android:id="@+id/imageTrainer"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="center"
+                android:scaleType="centerCrop"
+                android:src="@drawable/baseline_perm_identity_24" />
+        </FrameLayout>
+
+
+        <!-- Button to select image -->
+        <Button
+            android:id="@+id/buttonSelectImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose Image"
+            android:background="@drawable/button_background"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Trainer Name -->
         <EditText
             android:id="@+id/editTrainerName"
             android:hint="Trainer Name"
@@ -22,6 +52,7 @@
             android:textSize="16sp"
             android:layout_marginBottom="16dp" />
 
+        <!-- Email -->
         <EditText
             android:id="@+id/editTrainerEmail"
             android:hint="Email"
@@ -34,6 +65,7 @@
             android:textSize="16sp"
             android:layout_marginBottom="16dp" />
 
+        <!-- Specialties Title -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -42,6 +74,7 @@
             android:textSize="16sp"
             android:layout_marginBottom="8dp" />
 
+        <!-- Specialties Options -->
         <CheckBox
             android:id="@+id/checkboxBeginners"
             android:layout_width="wrap_content"
@@ -60,6 +93,7 @@
             android:layout_height="wrap_content"
             android:text="Advanced" />
 
+        <!-- Save Button -->
         <Button
             android:id="@+id/buttonSaveTrainer"
             android:text="Save Trainer"

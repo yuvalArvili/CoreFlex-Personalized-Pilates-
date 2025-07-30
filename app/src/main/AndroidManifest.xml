@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
     <uses-permission android:name="android.permission.READ_CALENDAR"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+
 
     <application
         android:allowBackup="true"
@@ -15,6 +17,13 @@
         android:theme="@style/Theme.CoreflexPilates"
         tools:targetApi="31">
 
+        <service
+            android:name=".ui.notifications.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".LauncherActivity"
@@ -25,18 +34,16 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".AuthActivity"
-            android:exported="false" />
+        <activity android:name=".AuthActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
+        <activity android:name=".AdminActivity" android:exported="false" />
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
-        <activity android:name=".AdminActivity"
-            android:exported="false"/>
+        <activity android:name=".ui.admin.AddLessonActivity" android:exported="false" />
+        <activity android:name=".ui.admin.AddTrainerActivity" android:exported="false" />
+        <activity android:name=".ui.admin.EditLessonActivity" android:exported="false" />
+        <activity android:name=".ui.admin.EditTrainerActivity" />
 
     </application>
+
 
 </manifest>

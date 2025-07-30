@@ -12,6 +12,7 @@ import com.example.coreflexpilates.model.Lesson
 
 class LessonAdapter(
     private val isAdmin: Boolean = false,
+    private val trainerNameMap: Map<String, String> = emptyMap(),
     private val onEditClick: ((Lesson) -> Unit)? = null,
     private val onDeleteClick: ((Lesson) -> Unit)? = null
 ) : RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
@@ -20,9 +21,11 @@ class LessonAdapter(
 
     inner class LessonViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.lessonTitle)
+        val trainer: TextView = view.findViewById(R.id.lessonTrainer)
         val description: TextView = view.findViewById(R.id.lessonDescription)
         val buttonEdit: ImageButton? = view.findViewById(R.id.buttonEdit)
         val buttonDelete: ImageButton? = view.findViewById(R.id.buttonDelete)
+        val buttonInvite: ImageButton? = view.findViewById(R.id.buttonInviteFriends) // ✅
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LessonViewHolder {
@@ -35,12 +38,14 @@ class LessonAdapter(
         val lesson = lessons[position]
 
         holder.title.text = lesson.title
+        holder.trainer.text = trainerNameMap[lesson.trainerId] ?: "Unknown Trainer"
         holder.description.text =
-            "${lesson.schedule.date} · ${lesson.schedule.time} · ${lesson.location}"
+            "${lesson.schedule.date} · ${lesson.schedule.time} · ${lesson.bookedCount}/${lesson.capacity}"
 
         if (isAdmin) {
             holder.buttonEdit?.visibility = View.VISIBLE
             holder.buttonDelete?.visibility = View.VISIBLE
+            holder.buttonInvite?.visibility = View.GONE
 
             holder.buttonEdit?.setOnClickListener {
                 onEditClick?.invoke(lesson)
@@ -49,13 +54,21 @@ class LessonAdapter(
             holder.buttonDelete?.setOnClickListener {
                 onDeleteClick?.invoke(lesson)
             }
+
         } else {
             holder.buttonEdit?.visibility = View.GONE
             holder.buttonDelete?.visibility = View.GONE
+            holder.buttonInvite?.visibility = View.VISIBLE
 
             holder.itemView.setOnClickListener {
                 val action = HomeFragmentDirections
                     .actionHomeFragmentToLessonDetailsFragment(lesson.classId)
+                it.findNavController().navigate(action)
+            }
+
+            holder.buttonInvite?.setOnClickListener {
+                val action = HomeFragmentDirections
+                    .actionHomeFragmentToInviteFriendsFragment(lesson.classId)
                 it.findNavController().navigate(action)
             }
         }

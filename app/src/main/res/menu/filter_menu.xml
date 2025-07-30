@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/filter_all"
-        android:title="All Lessons" />
+        android:id="@+id/filter_type_level"
+        android:title="Filter by Level" />
     <item
-        android:id="@+id/filter_beginners"
-        android:title="PILATES | beginners" />
-    <item
-        android:id="@+id/filter_intermediate"
-        android:title="PILATES + | intermediate" />
-    <item
-        android:id="@+id/filter_advanced"
-        android:title="PILATES ++ | advanced" />
+        android:id="@+id/filter_type_trainer"
+        android:title="Filter by Trainer" />
 </menu>

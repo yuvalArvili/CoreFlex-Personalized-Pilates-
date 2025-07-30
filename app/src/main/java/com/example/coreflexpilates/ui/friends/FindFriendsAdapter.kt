@@ -1,0 +1,37 @@
+package com.example.coreflexpilates.ui.friends
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.example.coreflexpilates.R
+import com.example.coreflexpilates.model.User
+
+class FindFriendsAdapter(
+    private val users: List<User>,
+    private val onAddClick: (User) -> Unit
+) : RecyclerView.Adapter<FindFriendsAdapter.UserViewHolder>() {
+
+    inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val name: TextView = itemView.findViewById(R.id.friendName)
+        val email: TextView = itemView.findViewById(R.id.friendEmail)
+        val addButton: Button = itemView.findViewById(R.id.buttonAddFriend)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_friend, parent, false)
+        return UserViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
+        val user = users[position]
+        holder.name.text = user.name
+        holder.email.text = user.email
+        holder.addButton.setOnClickListener { onAddClick(user) }
+    }
+
+    override fun getItemCount(): Int = users.size
+}

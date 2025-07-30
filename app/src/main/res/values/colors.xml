@@ -8,6 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="register_link">#5B0EF6</color>
-    <color name="background">#E2D1D1</color>
+    <color name="background">#F4E7E7</color>
     <color name="grey">#888888</color>
+    <color name="pink">#EF9DD8</color>
 </resources>

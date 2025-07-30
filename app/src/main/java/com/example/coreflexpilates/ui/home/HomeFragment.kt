@@ -1,23 +1,26 @@
 package com.example.coreflexpilates.ui.home
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.PopupMenu
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.databinding.FragmentHomeBinding
-import com.example.coreflexpilates.model.Lesson
 import com.example.coreflexpilates.model.DayItem
+import com.example.coreflexpilates.model.Lesson
+import com.example.coreflexpilates.model.Trainer
+import com.example.coreflexpilates.ui.admin.EditLessonActivity
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.*
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
-import java.time.temporal.ChronoUnit
-
 
 class HomeFragment : Fragment() {
 
@@ -27,61 +30,65 @@ class HomeFragment : Fragment() {
     private val firestore = FirebaseFirestore.getInstance()
     private val allLessons = mutableListOf<Lesson>()
     private lateinit var lessonAdapter: LessonAdapter
+    private val trainerNameMap = mutableMapOf<String, String>() // trainerId -> name
 
     private var selectedDate: LocalDate = LocalDate.now()
     private var currentWeekOffset = 0
     private lateinit var dayAdapter: DayAdapter
 
+    private var isAdmin: Boolean = false
+
+    companion object {
+        private val LEVELS = mapOf(
+            "All" to "",
+            "PILATES | beginners" to "Beginners",
+            "PILATES +| intermediate" to "Intermediate",
+            "PILATES ++| advanced" to "Advanced"
+        )
+
+        fun newInstance(isAdmin: Boolean): HomeFragment {
+            val fragment = HomeFragment()
+            val args = Bundle()
+            args.putBoolean("isAdmin", isAdmin)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        isAdmin = arguments?.getBoolean("isAdmin", false) ?: false
+    }
+
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+        val root = binding.root
 
-        // Setup lessons
-        lessonAdapter = LessonAdapter()
+        lessonAdapter = LessonAdapter(
+            isAdmin = isAdmin,
+            trainerNameMap = trainerNameMap,
+            onEditClick = { lesson ->
+                val intent = Intent(requireContext(), EditLessonActivity::class.java)
+                intent.putExtra("lessonId", lesson.classId)
+                startActivity(intent)
+            },
+            onDeleteClick = { lesson -> confirmDelete(lesson) }
+        )
+
         binding.recyclerViewLessons.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewLessons.adapter = lessonAdapter
 
-        // Fetch data
         fetchLessons()
-
-        // Setup days
+        fetchTrainerNames()
         setupRecyclerViewDays(currentWeekOffset)
 
-        // Filter menu
         binding.buttonFilter.setOnClickListener { view ->
-            val popup = PopupMenu(requireContext(), view)
-            popup.menuInflater.inflate(R.menu.filter_menu, popup.menu)
-
-            popup.setOnMenuItemClickListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.filter_all -> {
-                        lessonAdapter.updateData(allLessons)
-                        true
-                    }
-                    R.id.filter_beginners -> {
-                        filterLessons("beginners")
-                        true
-                    }
-                    R.id.filter_intermediate -> {
-                        filterLessons("intermediate")
-                        true
-                    }
-                    R.id.filter_advanced -> {
-                        filterLessons("advanced")
-                        true
-                    }
-                    else -> false
-                }
-            }
-
-            popup.show()
+            showMainFilterMenu(view)
         }
 
-        // Calendar picker
         binding.buttonOpenCalendar.setOnClickListener {
             val today = LocalDate.now()
             val datePicker = DatePickerDialog(
@@ -92,14 +99,10 @@ class HomeFragment : Fragment() {
 
                     val baseSunday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
                     val selectedSunday = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-
                     currentWeekOffset = ChronoUnit.WEEKS.between(baseSunday, selectedSunday).toInt()
-
                     setupRecyclerViewDays(currentWeekOffset)
                 },
-                today.year,
-                today.monthValue - 1,
-                today.dayOfMonth
+                today.year, today.monthValue - 1, today.dayOfMonth
             )
             datePicker.show()
         }
@@ -107,8 +110,13 @@ class HomeFragment : Fragment() {
         return root
     }
 
+    override fun onResume() {
+        super.onResume()
+        fetchLessons()
+    }
+
     private fun fetchLessons() {
-        firestore.collection("classes")
+        firestore.collection("lessons")
             .get()
             .addOnSuccessListener { result ->
                 allLessons.clear()
@@ -125,8 +133,76 @@ class HomeFragment : Fragment() {
             }
     }
 
+    private fun fetchTrainerNames() {
+        firestore.collection("trainers").get()
+            .addOnSuccessListener { result ->
+                for (doc in result) {
+                    val trainer = doc.toObject(Trainer::class.java)
+                    trainerNameMap[doc.id] = trainer.name
+                }
+            }
+    }
 
-    private fun filterLessons(level: String) {
+    private fun showMainFilterMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add("Filter by Level")
+        popup.menu.add("Filter by Trainer")
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title.toString()) {
+                "Filter by Level" -> showLevelFilterMenu(anchor)
+                "Filter by Trainer" -> showTrainerFilterMenu(anchor)
+            }
+            true
+        }
+
+        popup.show()
+    }
+
+    private fun showLevelFilterMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        LEVELS.forEach { (key, _) ->
+            popup.menu.add(key)
+        }
+
+        popup.setOnMenuItemClickListener { item ->
+            val level = item.title.toString()
+            if (level == "All") {
+                lessonAdapter.updateData(allLessons)
+            } else {
+                filterLessonsByLevel(level)
+            }
+            true
+        }
+
+        popup.show()
+    }
+
+    private fun showTrainerFilterMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add("All")
+        trainerNameMap.values.sorted().forEach { name ->
+            popup.menu.add(name)
+        }
+
+        val trainerNameToId = trainerNameMap.entries.associate { it.value to it.key }
+
+        popup.setOnMenuItemClickListener { item ->
+            val selectedName = item.title.toString()
+            if (selectedName == "All") {
+                lessonAdapter.updateData(allLessons)
+            } else {
+                val trainerId = trainerNameToId[selectedName]
+                val filtered = allLessons.filter { it.trainerId == trainerId }
+                lessonAdapter.updateData(filtered)
+            }
+            true
+        }
+
+        popup.show()
+    }
+
+    private fun filterLessonsByLevel(level: String) {
         val filtered = allLessons.filter { it.title == level }
         lessonAdapter.updateData(filtered)
     }
@@ -160,6 +236,29 @@ class HomeFragment : Fragment() {
         binding.recyclerViewDays.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.recyclerViewDays.adapter = dayAdapter
+    }
+
+    private fun confirmDelete(lesson: Lesson) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Lesson")
+            .setMessage("Are you sure you want to delete this lesson?")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteLesson(lesson)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteLesson(lesson: Lesson) {
+        firestore.collection("lessons")
+            .document(lesson.classId)
+            .delete()
+            .addOnSuccessListener {
+                fetchLessons()
+            }
+            .addOnFailureListener {
+                Log.e("HomeFragment", "Failed to delete lesson", it)
+            }
     }
 
     override fun onDestroyView() {

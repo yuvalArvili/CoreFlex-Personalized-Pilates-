@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="12dp"
-    card_view:cardBackgroundColor="#EFC4DC"
+    card_view:cardBackgroundColor="@color/pink"
     card_view:cardCornerRadius="16dp"
     card_view:cardElevation="6dp">
 
@@ -26,10 +27,17 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Pilates Class"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black" />
+
+            <ImageButton
+                android:id="@+id/buttonCancelBooking"
+                android:src="@drawable/outline_delete"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone" />
 
             <ImageButton
                 android:id="@+id/buttonEdit"
@@ -49,24 +57,29 @@
                 android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
 
-        <!-- Instructor name -->
         <TextView
-            android:id="@+id/lessonInstructor"
+            android:id="@+id/lessonTrainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Instructor Name"
             android:textColor="@android:color/black"
             android:layout_marginTop="6dp" />
 
-        <!-- Date + Time + Location -->
         <TextView
             android:id="@+id/lessonDescription"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="July 2 · 10:00 AM · Studio A"
             android:textColor="#666666"
             android:textSize="14sp"
             android:layout_marginTop="2dp" />
+
+        <ImageButton
+            android:id="@+id/buttonInviteFriends"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/baseline_ios_share_24"
+            android:visibility="gone"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -15,6 +15,7 @@
     import com.google.android.material.button.MaterialButton
     import com.google.firebase.auth.FirebaseAuth
     import com.google.firebase.firestore.FirebaseFirestore
+    import java.util.Locale
 
     class ProfileFragment : Fragment() {
 
@@ -142,26 +143,22 @@
         }
 
         private fun setupRecyclerView() {
-            adapter = BookedLessonAdapter(bookedLessons)
+            adapter = BookedLessonAdapter(bookedLessons) {
+                loadBookedLessons()
+            }
             bookingsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
             bookingsRecyclerView.adapter = adapter
         }
 
         private fun loadBookedLessons() {
             val userId = auth.currentUser?.uid ?: return
-            val now = System.currentTimeMillis()
 
             firestore.collection("bookings")
                 .whereEqualTo("userId", userId)
                 .get()
                 .addOnSuccessListener { bookingDocs ->
-                    val filteredBookings = bookingDocs.mapNotNull { it.toObject(Booking::class.java) }
-                        .filter { booking ->
-                            val isFuture = booking.timestamp > now
-                            (isShowingUpcoming && isFuture) || (!isShowingUpcoming && !isFuture)
-                        }
-
-                    val lessonIds = filteredBookings.mapNotNull { it.lessonId }
+                    val bookings = bookingDocs.mapNotNull { it.toObject(Booking::class.java) }
+                    val lessonIds = bookings.mapNotNull { it.lessonId }
 
                     if (lessonIds.isEmpty()) {
                         bookedLessons.clear()
@@ -171,17 +168,26 @@
                         return@addOnSuccessListener
                     }
 
-                    firestore.collection("classes")
+                    firestore.collection("lessons")
                         .whereIn("classId", lessonIds.take(10))
                         .get()
                         .addOnSuccessListener { classDocs ->
                             bookedLessons.clear()
+                            val now = System.currentTimeMillis()
+                            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
                             for (doc in classDocs) {
                                 val lesson = doc.toObject(Lesson::class.java)
-                                bookedLessons.add(lesson)
+                                val lessonDateTime = "${lesson.schedule.date} ${lesson.schedule.time}"
+
+                                val lessonTime = formatter.parse(lessonDateTime)?.time ?: continue
+                                val isFuture = lessonTime > now
+
+                                if ((isShowingUpcoming && isFuture) || (!isShowingUpcoming && !isFuture)) {
+                                    bookedLessons.add(lesson)
+                                }
                             }
 
-                            // Sort by schedule date + time for better UX
                             bookedLessons.sortBy { it.schedule.date + it.schedule.time }
 
                             adapter.notifyDataSetChanged()
@@ -190,4 +196,6 @@
                         }
                 }
         }
+
+
     }

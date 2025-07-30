@@ -9,10 +9,8 @@ data class Schedule(
 data class Lesson(
     val title: String = "",
     val schedule: Schedule = Schedule(),
-    val location: String = "",
     val capacity: Int = 0,
+    val bookedCount: Int = 0,
     val trainerId: String = "",
     val classId: String = ""
 )
-
-

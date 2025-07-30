@@ -1,0 +1,62 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <FrameLayout
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_gravity="center"
+        android:background="@drawable/circle_gray_background">
+
+    <ImageView
+        android:id="@+id/trainerImage"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@drawable/baseline_perm_identity_24"
+        android:layout_marginStart="3dp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/trainerName"
+            android:text="Trainer Name"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/trainerSpecialty"
+            android:text="Specialty"
+            android:textSize="14sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/editTrainerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_edit"
+        android:layout_marginTop="12dp"
+        android:contentDescription="Edit Trainer"
+        android:background="?attr/selectableItemBackgroundBorderless" />
+
+    <ImageButton
+        android:id="@+id/deleteTrainerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/outline_delete"
+        android:layout_marginTop="12dp"
+        android:contentDescription="Delete Trainer"
+        android:background="?attr/selectableItemBackgroundBorderless" />
+</LinearLayout>

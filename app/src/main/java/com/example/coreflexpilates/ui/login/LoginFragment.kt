@@ -52,8 +52,14 @@ class LoginFragment : Fragment() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener {
                 val uid = auth.currentUser?.uid ?: return@addOnSuccessListener
-
                 val firestore = FirebaseFirestore.getInstance()
+
+                com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                    .addOnSuccessListener { token ->
+                        firestore.collection("users").document(uid)
+                            .update("fcmToken", token)
+                    }
+
                 firestore.collection("users").document(uid)
                     .get()
                     .addOnSuccessListener { doc ->
@@ -72,6 +78,6 @@ class LoginFragment : Fragment() {
             .addOnFailureListener { e ->
                 Toast.makeText(requireContext(), "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-
     }
+
 }
