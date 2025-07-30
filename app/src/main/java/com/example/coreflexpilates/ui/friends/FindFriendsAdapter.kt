@@ -10,9 +10,17 @@ import com.example.coreflexpilates.R
 import com.example.coreflexpilates.model.User
 
 class FindFriendsAdapter(
-    private val users: List<User>,
+    private var users: List<User>,
+    private val friendIds: Set<String>,
     private val onAddClick: (User) -> Unit
 ) : RecyclerView.Adapter<FindFriendsAdapter.UserViewHolder>() {
+
+    private val requestedUserIds = mutableSetOf<String>()
+
+    fun updateList(newUsers: List<User>) {
+        users = newUsers
+        notifyDataSetChanged()
+    }
 
     inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val name: TextView = itemView.findViewById(R.id.friendName)
@@ -30,7 +38,26 @@ class FindFriendsAdapter(
         val user = users[position]
         holder.name.text = user.name
         holder.email.text = user.email
-        holder.addButton.setOnClickListener { onAddClick(user) }
+
+        when {
+            friendIds.contains(user.uid) -> {
+                holder.addButton.text = "FRIEND"
+                holder.addButton.isEnabled = false
+            }
+            requestedUserIds.contains(user.uid) -> {
+                holder.addButton.text = "REQUESTED"
+                holder.addButton.isEnabled = false
+            }
+            else -> {
+                holder.addButton.text = "FOLLOW"
+                holder.addButton.isEnabled = true
+                holder.addButton.setOnClickListener {
+                    requestedUserIds.add(user.uid)
+                    notifyItemChanged(position)
+                    onAddClick(user)
+                }
+            }
+        }
     }
 
     override fun getItemCount(): Int = users.size

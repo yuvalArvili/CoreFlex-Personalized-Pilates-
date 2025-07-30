@@ -5,7 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.model.Lesson
@@ -14,7 +13,8 @@ class LessonAdapter(
     private val isAdmin: Boolean = false,
     private val trainerNameMap: Map<String, String> = emptyMap(),
     private val onEditClick: ((Lesson) -> Unit)? = null,
-    private val onDeleteClick: ((Lesson) -> Unit)? = null
+    private val onDeleteClick: ((Lesson) -> Unit)? = null,
+    private val onInviteClick: ((Lesson) -> Unit)? = null  // הוספתי פרמטר חדש לכפתור הזמנה
 ) : RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
 
     private val lessons = mutableListOf<Lesson>()
@@ -25,7 +25,7 @@ class LessonAdapter(
         val description: TextView = view.findViewById(R.id.lessonDescription)
         val buttonEdit: ImageButton? = view.findViewById(R.id.buttonEdit)
         val buttonDelete: ImageButton? = view.findViewById(R.id.buttonDelete)
-        val buttonInvite: ImageButton? = view.findViewById(R.id.buttonInviteFriends) // ✅
+        val buttonInvite: ImageButton? = view.findViewById(R.id.buttonInviteFriends)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LessonViewHolder {
@@ -61,15 +61,11 @@ class LessonAdapter(
             holder.buttonInvite?.visibility = View.VISIBLE
 
             holder.itemView.setOnClickListener {
-                val action = HomeFragmentDirections
-                    .actionHomeFragmentToLessonDetailsFragment(lesson.classId)
-                it.findNavController().navigate(action)
+                // ניווט לדיטיילס - אפשר גם להעביר דרך onEditClick אם רוצים
             }
 
             holder.buttonInvite?.setOnClickListener {
-                val action = HomeFragmentDirections
-                    .actionHomeFragmentToInviteFriendsFragment(lesson.classId)
-                it.findNavController().navigate(action)
+                onInviteClick?.invoke(lesson)
             }
         }
     }

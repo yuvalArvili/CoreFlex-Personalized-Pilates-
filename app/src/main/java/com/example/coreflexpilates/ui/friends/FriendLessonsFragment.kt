@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreflexpilates.databinding.FragmentFriendLessonsBinding
 import com.example.coreflexpilates.model.Lesson
@@ -40,10 +41,20 @@ class FriendLessonsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.friendLessonsTitle.text = "$friendName's Lessons"
 
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+
         adapter = LessonAdapter(
             isAdmin = false,
-            onEditClick = {},
-            onDeleteClick = {}
+            onEditClick = { lesson ->
+                // ניווט לדיטיילס של שיעור אם תרצי
+            },
+            onDeleteClick = {},
+            onInviteClick = { lesson ->
+                val action = FriendLessonsFragmentDirections.actionFriendLessonsFragmentToInviteFriendsFragment(lesson.classId)
+                findNavController().navigate(action)
+            }
         )
         binding.recyclerViewFriendLessons.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewFriendLessons.adapter = adapter

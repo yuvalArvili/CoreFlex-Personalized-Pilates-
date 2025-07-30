@@ -1,6 +1,7 @@
 package com.example.coreflexpilates.ui.friends
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,11 +9,13 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreflexpilates.databinding.FragmentInviteFriendsBinding
-import com.example.coreflexpilates.model.Friendship
 import com.example.coreflexpilates.model.LessonInvitation
 import com.example.coreflexpilates.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.RemoteMessage
+import java.util.UUID
 
 class InviteFriendsFragment : Fragment() {
 
@@ -29,7 +32,6 @@ class InviteFriendsFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // קבל את lessonId שהועבר דרך Bundle
         lessonId = arguments?.getString("lessonId") ?: ""
     }
 
@@ -42,6 +44,10 @@ class InviteFriendsFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+
         adapter = InviteFriendsAdapter(friends) { friend ->
             sendInvitation(friend.uid)
         }
@@ -96,11 +102,47 @@ class InviteFriendsFragment : Fragment() {
             .add(invitation)
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Invitation sent", Toast.LENGTH_SHORT).show()
+                sendInvitationNotification(receiverId)
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to send", Toast.LENGTH_SHORT).show()
             }
     }
+
+    private fun sendInvitationNotification(receiverId: String) {
+        db.collection("users").document(receiverId)
+            .get()
+            .addOnSuccessListener { doc ->
+                val token = doc.getString("fcmToken")
+                if (token.isNullOrBlank()) {
+                    Log.e("PushNotification", "No FCM token for user $receiverId")
+                    return@addOnSuccessListener
+                }
+
+                val senderName = auth.currentUser?.displayName ?: "Someone"
+                val data = mapOf(
+                    "title" to "New Lesson Invitation",
+                    "body" to "$senderName invited you to a lesson"
+                )
+
+                val message = RemoteMessage.Builder("$token@fcm.googleapis.com")
+                    .setMessageId(UUID.randomUUID().toString())
+                    .setData(data)
+                    .build()
+
+                try {
+                    FirebaseMessaging.getInstance().send(message)
+                    Log.d("PushNotification", "Push notification sent to $receiverId with token $token")
+                } catch (e: Exception) {
+                    Log.e("PushNotification", "Failed to send push notification", e)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("PushNotification", "Failed to fetch user document for $receiverId", it)
+            }
+    }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

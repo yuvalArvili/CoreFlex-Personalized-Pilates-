@@ -8,6 +8,7 @@ import android.view.*
 import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.databinding.FragmentHomeBinding
@@ -75,8 +76,13 @@ class HomeFragment : Fragment() {
                 intent.putExtra("lessonId", lesson.classId)
                 startActivity(intent)
             },
-            onDeleteClick = { lesson -> confirmDelete(lesson) }
+            onDeleteClick = { lesson -> confirmDelete(lesson) },
+            onInviteClick = { lesson ->
+                val action = HomeFragmentDirections.actionHomeFragmentToInviteFriendsFragment(lesson.classId)
+                findNavController().navigate(action)
+            }
         )
+
 
         binding.recyclerViewLessons.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewLessons.adapter = lessonAdapter

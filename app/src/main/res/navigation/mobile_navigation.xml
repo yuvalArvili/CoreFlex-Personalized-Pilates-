@@ -17,7 +17,7 @@
             android:id="@+id/action_homeFragment_to_lessonDetailsFragment"
             app:destination="@id/lessonDetailsFragment" />
 
-        <!-- ✅ Action to InviteFriendsFragment -->
+        <!-- Action to InviteFriendsFragment -->
         <action
             android:id="@+id/action_homeFragment_to_inviteFriendsFragment"
             app:destination="@id/inviteFriendsFragment" />
@@ -28,7 +28,13 @@
         android:id="@+id/navigation_dashboard"
         android:name="com.example.coreflexpilates.ui.profile.ProfileFragment"
         android:label="@string/title_profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+
+        <!-- Action to FriendRequestsFragment -->
+        <action
+            android:id="@+id/action_profileFragment_to_friendRequestsFragment"
+            app:destination="@id/friendRequestsFragment" />
+    </fragment>
 
     <!-- Notifications Fragment -->
     <fragment
@@ -44,7 +50,7 @@
         android:label="@string/title_explore"
         tools:layout="@layout/fragment_friends_list" />
 
-    <!-- ✅ Invite Friends Fragment -->
+    <!-- Invite Friends Fragment -->
     <fragment
         android:id="@+id/inviteFriendsFragment"
         android:name="com.example.coreflexpilates.ui.friends.InviteFriendsFragment"
@@ -78,6 +84,33 @@
         <argument
             android:name="trainerId"
             app:argType="string" />
+    </fragment>
+
+    <!-- Friend Requests Fragment -->
+    <fragment
+        android:id="@+id/friendRequestsFragment"
+        android:name="com.example.coreflexpilates.ui.friends.FriendRequestsFragment"
+        android:label="Friend Requests"
+        tools:layout="@layout/fragment_friend_requests" />
+
+    <!-- Friend Lessons Fragment -->
+    <fragment
+        android:id="@+id/FriendLessonsFragment"
+        android:name="com.example.coreflexpilates.ui.friends.FriendLessonsFragment"
+        android:label="Friend Lessons"
+        tools:layout="@layout/fragment_friend_lessons">
+        <argument
+            android:name="friendId"
+            app:argType="string" />
+        <argument
+            android:name="friendName"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_FriendLessonsFragment_to_lessonDetailsFragment"
+            app:destination="@id/lessonDetailsFragment" />
+        <action
+            android:id="@+id/action_FriendLessonsFragment_to_inviteFriendsFragment"
+            app:destination="@id/inviteFriendsFragment" />
     </fragment>
 
 </navigation>
