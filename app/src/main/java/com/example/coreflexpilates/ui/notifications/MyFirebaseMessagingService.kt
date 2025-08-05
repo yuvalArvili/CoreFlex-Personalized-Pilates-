@@ -12,27 +12,33 @@ import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    // Called when a new FCM message is received
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
+        // Log message details for debugging
+        Log.d("FCM", "Message received from: ${remoteMessage.from}")
+        Log.d("FCM", "Notification data: ${remoteMessage.data}")
+        Log.d("FCM", "Notification title: ${remoteMessage.notification?.title}")
+        Log.d("FCM", "Notification body: ${remoteMessage.notification?.body}")
+
         val title = remoteMessage.notification?.title ?: "Reminder"
         val message = remoteMessage.notification?.body ?: "You have a class soon!"
-
-        showNotification(title, message)
+        showNotification(title, message) // Show the notification on device
     }
-
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "New token: $token")
-        // תוכל לעדכן את השרת בטוקן החדש אם תשתמש בשרת משלך
     }
 
+    // Creates and displays a notification with given title and message
     private fun showNotification(title: String, message: String) {
+        Log.d("FCM", "Showing notification with title: $title and message: $message")
+
         val channelId = "default_channel"
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // יצירת ערוץ (API 26+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -49,6 +55,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .build()
 
+        // Show notification
         notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }

@@ -5,12 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.coreflexpilates.R
 import com.example.coreflexpilates.model.Trainer
+import com.google.android.material.imageview.ShapeableImageView
 
 class AdminTrainerAdapter(
     private val trainers: List<Trainer>,
@@ -19,7 +19,7 @@ class AdminTrainerAdapter(
 ) : RecyclerView.Adapter<AdminTrainerAdapter.TrainerViewHolder>() {
 
     inner class TrainerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val trainerImage: ImageView = view.findViewById(R.id.trainerImage)
+        val trainerImage: ShapeableImageView = view.findViewById(R.id.trainerImage)
         val trainerName: TextView = view.findViewById(R.id.trainerName)
         val trainerSpecialty: TextView = view.findViewById(R.id.trainerSpecialty)
         val editButton: ImageButton = view.findViewById(R.id.editTrainerButton)
@@ -38,15 +38,19 @@ class AdminTrainerAdapter(
         holder.trainerName.text = trainer.name
         holder.trainerSpecialty.text = trainer.specialties.joinToString(", ")
 
+        // Load trainer's image with Glide
         Glide.with(holder.itemView.context)
             .load(trainer.imageUrl)
             .placeholder(R.drawable.baseline_perm_identity_24)
+            .circleCrop()
             .into(holder.trainerImage)
 
+        // Edit button
         holder.editButton.setOnClickListener {
             onEditClick(trainer)
         }
 
+        // Delete button
         holder.deleteButton.setOnClickListener {
             AlertDialog.Builder(holder.itemView.context)
                 .setTitle("Delete Trainer")

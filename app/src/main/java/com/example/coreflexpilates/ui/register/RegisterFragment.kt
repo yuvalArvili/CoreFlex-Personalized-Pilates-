@@ -2,7 +2,6 @@ package com.example.coreflexpilates.ui.register
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.util.Patterns
 import android.view.*
 import android.widget.*
@@ -18,7 +17,6 @@ class RegisterFragment : Fragment() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
-    private val TAG = "Register"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_register, container, false)
@@ -30,7 +28,6 @@ class RegisterFragment : Fragment() {
         val emailEdit = view.findViewById<EditText>(R.id.editTextEmail)
         val passwordEdit = view.findViewById<EditText>(R.id.editTextPassword)
         val confirmEdit = view.findViewById<EditText>(R.id.editTextConfirmPassword)
-        val roleRadioGroup = view.findViewById<RadioGroup>(R.id.roleRadioGroup)
         val buttonRegister = view.findViewById<Button>(R.id.buttonRegister)
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
 
@@ -40,6 +37,7 @@ class RegisterFragment : Fragment() {
             val password = passwordEdit.text.toString()
             val confirm = confirmEdit.text.toString()
 
+            // Validate input fields
             if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
                 Toast.makeText(requireContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -60,12 +58,10 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val selectedRoleId = roleRadioGroup.checkedRadioButtonId
-            val role = if (selectedRoleId == R.id.radioAdmin) "admin" else "user"
-
             progressBar.visibility = View.VISIBLE
             buttonRegister.isEnabled = false
 
+            // Create new user with Firebase Authentication
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
                     val uid = auth.currentUser?.uid
@@ -76,17 +72,17 @@ class RegisterFragment : Fragment() {
                         return@addOnSuccessListener
                     }
 
-                    // ✅ קבלת הטוקן
+                    // Get Firebase Cloud Messaging token for push notifications
                     FirebaseMessaging.getInstance().token
                         .addOnSuccessListener { token ->
                             val userData = hashMapOf(
                                 "uid" to uid,
                                 "name" to name,
                                 "email" to email,
-                                "role" to role,
                                 "fcmToken" to token
                             )
 
+                            // Save user data in Firestore under 'users' collection
                             firestore.collection("users").document(uid).set(userData)
                                 .addOnSuccessListener {
                                     Toast.makeText(requireContext(), "Registration successful!", Toast.LENGTH_SHORT).show()
@@ -112,6 +108,7 @@ class RegisterFragment : Fragment() {
                 }
         }
 
+        // Link to switch to LoginFragment
         view.findViewById<TextView>(R.id.textLogin).setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.auth_fragment_container, LoginFragment())

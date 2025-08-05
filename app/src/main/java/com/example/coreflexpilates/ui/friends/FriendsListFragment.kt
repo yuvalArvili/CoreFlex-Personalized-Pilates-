@@ -44,8 +44,8 @@ class FriendsListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.recyclerViewFriends.layoutManager = LinearLayoutManager(requireContext())
-
         friendsAdapter = FriendsListAdapter(friends) { user ->
+            // Navigate to friend's lessons on friend item click
             val bundle = Bundle().apply {
                 putString("friendId", user.uid)
                 putString("friendName", user.name)
@@ -54,24 +54,31 @@ class FriendsListFragment : Fragment() {
         }
         binding.recyclerViewFriends.adapter = friendsAdapter
 
+        // Initialize search results adapter with empty list and current friend IDs
+        findFriendsAdapter = FindFriendsAdapter(emptyList(), friendIds) { user ->
+            sendFriendRequest(user)
+        }
+
+        // Setup search listener for filtering users dynamically
         binding.searchViewFriends.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = true
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText.isNullOrBlank()) {
+                    // If search text is empty, show the friends list
                     binding.recyclerViewFriends.adapter = friendsAdapter
                     friendsAdapter.notifyDataSetChanged()
                     binding.textNoFriends.visibility = if (friends.isEmpty()) View.VISIBLE else View.GONE
                 } else {
+                    // Filter all users by name or email
                     val filtered = allUsers.filter {
                         (it.name.contains(newText, ignoreCase = true) ||
                                 it.email.contains(newText, ignoreCase = true)) &&
                                 it.uid != auth.currentUser?.uid
                     }
 
-                    findFriendsAdapter = FindFriendsAdapter(filtered, friendIds) { user ->
-                        sendFriendRequest(user)
-                    }
+                    // Update the search adapter's list
+                    findFriendsAdapter.updateList(filtered)
                     binding.recyclerViewFriends.adapter = findFriendsAdapter
                     binding.textNoFriends.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
                 }
@@ -79,9 +86,11 @@ class FriendsListFragment : Fragment() {
             }
         })
 
+        // Load pending friend requests
         loadRequestedUserIds()
     }
 
+    // Load users that pending
     private fun loadRequestedUserIds() {
         val currentUserId = auth.currentUser?.uid ?: return
         firestore.collection("friend_requests")
@@ -100,16 +109,19 @@ class FriendsListFragment : Fragment() {
             }
     }
 
+    // Load friend IDs of current user
     private fun loadFriends() {
         val currentUserId = auth.currentUser?.uid ?: return
         friendIds.clear()
 
+        // Query friendships where current user is user1
         firestore.collection("friendships")
             .whereEqualTo("user1Id", currentUserId)
             .get()
             .addOnSuccessListener { result1 ->
                 result1.forEach { doc -> friendIds.add(doc.getString("user2Id") ?: "") }
 
+                // Query friendships where current user is user2
                 firestore.collection("friendships")
                     .whereEqualTo("user2Id", currentUserId)
                     .get()
@@ -121,6 +133,7 @@ class FriendsListFragment : Fragment() {
             }
     }
 
+    // Load all users
     private fun loadAllUsers(currentUserId: String) {
         firestore.collection("users")
             .get()
@@ -138,10 +151,12 @@ class FriendsListFragment : Fragment() {
                     }
                 }
 
+                // Notify the friends adapter that data has changed
                 friendsAdapter.notifyDataSetChanged()
             }
     }
 
+    // Send a friend request
     private fun sendFriendRequest(user: User) {
         val currentUserId = auth.currentUser?.uid ?: return
 
@@ -165,6 +180,7 @@ class FriendsListFragment : Fragment() {
             }
     }
 
+    // Send a push notification to the user receiving the friend request
     private fun sendFriendRequestNotification(receiverId: String) {
         if (receiverId.isBlank()) return
 

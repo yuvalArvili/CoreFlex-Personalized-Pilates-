@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.coreflexpilates.R
 import com.example.coreflexpilates.databinding.FragmentHomeBinding
 import com.example.coreflexpilates.model.DayItem
 import com.example.coreflexpilates.model.Lesson
@@ -18,6 +17,7 @@ import com.example.coreflexpilates.model.Trainer
 import com.example.coreflexpilates.ui.admin.EditLessonActivity
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.*
+import com.google.firebase.functions.FirebaseFunctions
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
@@ -31,7 +31,7 @@ class HomeFragment : Fragment() {
     private val firestore = FirebaseFirestore.getInstance()
     private val allLessons = mutableListOf<Lesson>()
     private lateinit var lessonAdapter: LessonAdapter
-    private val trainerNameMap = mutableMapOf<String, String>() // trainerId -> name
+    private val trainerNameMap = mutableMapOf<String, String>()
 
     private var selectedDate: LocalDate = LocalDate.now()
     private var currentWeekOffset = 0
@@ -47,13 +47,6 @@ class HomeFragment : Fragment() {
             "PILATES ++| advanced" to "Advanced"
         )
 
-        fun newInstance(isAdmin: Boolean): HomeFragment {
-            val fragment = HomeFragment()
-            val args = Bundle()
-            args.putBoolean("isAdmin", isAdmin)
-            fragment.arguments = args
-            return fragment
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +61,7 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root = binding.root
 
+        // Initialize lesson adapter with callbacks for admin/user actions
         lessonAdapter = LessonAdapter(
             isAdmin = isAdmin,
             trainerNameMap = trainerNameMap,
@@ -80,20 +74,26 @@ class HomeFragment : Fragment() {
             onInviteClick = { lesson ->
                 val action = HomeFragmentDirections.actionHomeFragmentToInviteFriendsFragment(lesson.classId)
                 findNavController().navigate(action)
+            },
+            onLessonClick = { lesson ->
+                val action = HomeFragmentDirections.actionHomeFragmentToLessonDetailsFragment(lesson.classId)
+                findNavController().navigate(action)
             }
         )
 
-
+        // Setup recycler view for lessons
         binding.recyclerViewLessons.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewLessons.adapter = lessonAdapter
 
         fetchLessons()
         fetchTrainerNames()
+
         setupRecyclerViewDays(currentWeekOffset)
 
         binding.buttonFilter.setOnClickListener { view ->
             showMainFilterMenu(view)
         }
+
 
         binding.buttonOpenCalendar.setOnClickListener {
             val today = LocalDate.now()
@@ -103,6 +103,7 @@ class HomeFragment : Fragment() {
                     selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
                     filterLessonsByDate(selectedDate)
 
+                    // Calculate week offset for day selector
                     val baseSunday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
                     val selectedSunday = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
                     currentWeekOffset = ChronoUnit.WEEKS.between(baseSunday, selectedSunday).toInt()
@@ -118,9 +119,11 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        // Refresh lessons when fragment resumes
         fetchLessons()
     }
 
+    // Load all lessons from Firestore, sort, and filter by selected date
     private fun fetchLessons() {
         firestore.collection("lessons")
             .get()
@@ -132,6 +135,7 @@ class HomeFragment : Fragment() {
                         allLessons.add(lesson)
                     }
                 }
+                allLessons.sortWith(compareBy({ it.schedule.date }, { it.schedule.time }))
                 filterLessonsByDate(selectedDate)
             }
             .addOnFailureListener { e ->
@@ -139,6 +143,7 @@ class HomeFragment : Fragment() {
             }
     }
 
+    // Load all trainer names into map for display
     private fun fetchTrainerNames() {
         firestore.collection("trainers").get()
             .addOnSuccessListener { result ->
@@ -208,16 +213,21 @@ class HomeFragment : Fragment() {
         popup.show()
     }
 
+    // Filter lessons by level
     private fun filterLessonsByLevel(level: String) {
         val filtered = allLessons.filter { it.title == level }
+            .sortedWith(compareBy({ it.schedule.date }, { it.schedule.time }))
         lessonAdapter.updateData(filtered)
     }
 
+    // Filter lessons by date
     private fun filterLessonsByDate(date: LocalDate) {
         val isoDate = date.toString()
         val filtered = allLessons.filter { it.schedule.date == isoDate }
+            .sortedWith(compareBy({ it.schedule.date }, { it.schedule.time }))
         lessonAdapter.updateData(filtered)
     }
+
 
     private fun setupRecyclerViewDays(offset: Int = 0) {
         val today = LocalDate.now().plusWeeks(offset.toLong())
@@ -244,6 +254,7 @@ class HomeFragment : Fragment() {
         binding.recyclerViewDays.adapter = dayAdapter
     }
 
+    // Show confirmation dialog before deleting a lesson (admin only)
     private fun confirmDelete(lesson: Lesson) {
         AlertDialog.Builder(requireContext())
             .setTitle("Delete Lesson")
@@ -255,11 +266,59 @@ class HomeFragment : Fragment() {
             .show()
     }
 
+    // Delete lesson and update related bookings and subscriptions
     private fun deleteLesson(lesson: Lesson) {
         firestore.collection("lessons")
             .document(lesson.classId)
             .delete()
             .addOnSuccessListener {
+                // Fetch all bookings for this lesson to update user quotas and send notifications
+                firestore.collection("bookings")
+                    .whereEqualTo("lessonId", lesson.classId)
+                    .get()
+                    .addOnSuccessListener { bookingsSnapshot ->
+                        for (bookingDoc in bookingsSnapshot.documents) {
+                            val userId = bookingDoc.getString("userId") ?: continue
+                            Log.d("HomeFragment", "Sending cancel notification to userId: $userId")
+
+                            val userRef = firestore.collection("users").document(userId)
+                            // Increment subscription quota for affected users
+                            firestore.runTransaction { transaction ->
+                                val userSnapshot = transaction.get(userRef)
+                                val currentQuota = userSnapshot.getLong("subscriptionQuota") ?: 0
+                                transaction.update(userRef, "subscriptionQuota", currentQuota + 1)
+                            }.addOnSuccessListener {
+                                Log.d("HomeFragment", "Subscription quota incremented for userId: $userId")
+                            }.addOnFailureListener { e ->
+                                Log.e("HomeFragment", "Failed to increment subscription quota for userId: $userId", e)
+                            }
+
+                            // Prepare data for cancel notification
+                            val data = HashMap<String, Any>()
+                            data["userId"] = userId
+                            data["lessonTitle"] = lesson.title
+                            data["lessonDate"] = lesson.schedule.date
+                            data["lessonTime"] = lesson.schedule.time
+
+                            Log.d("HomeFragment", "Sending cancel notification data: $data")
+
+                            // Call Firebase Cloud Function to send notification
+                            FirebaseFunctions.getInstance()
+                                .getHttpsCallable("sendBookingCancelledNotification")
+                                .call(data)
+                                .addOnSuccessListener {
+                                    Log.d("HomeFragment", "Cancel notification sent successfully to $userId")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("HomeFragment", "Failed to send cancel notification", e)
+                                }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("HomeFragment", "Failed to get bookings for cancellation", e)
+                    }
+
+                // Refresh lessons list
                 fetchLessons()
             }
             .addOnFailureListener {

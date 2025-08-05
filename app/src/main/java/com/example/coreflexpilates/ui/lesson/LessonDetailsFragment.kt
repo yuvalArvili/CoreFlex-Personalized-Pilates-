@@ -17,6 +17,10 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
+import java.time.DayOfWeek
 import java.util.*
 
 class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
@@ -41,6 +45,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
         val bookButton: Button = view.findViewById(R.id.bookButton)
         val trainerText: TextView = view.findViewById(R.id.trainerNameText)
 
+        // Load lesson details from Firestore by lessonId
         firestore.collection("lessons").document(lessonId)
             .get()
             .addOnSuccessListener { doc ->
@@ -51,6 +56,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
                     detailsText.text =
                         " ${lesson.schedule.date} • ${lesson.schedule.time} • ${lesson.bookedCount}/${lesson.capacity}"
 
+                    // Navigate to trainer details
                     trainerText.text = "View Trainer Details"
                     trainerText.setOnClickListener {
                         val bundle = Bundle().apply {
@@ -62,14 +68,84 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
                         )
                     }
 
+                    // Handle booking button click (security)
                     bookButton.setOnClickListener {
-                        bookLesson(lesson)
+                        val userId = auth.currentUser?.uid
+                        if (userId == null) {
+                            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+                            return@setOnClickListener
+                        }
+
+                        // Check if subscription valid
+                        firestore.collection("users").document(userId).get()
+                            .addOnSuccessListener { userDoc ->
+                                val subscriptionFrequency = userDoc.getString("subscriptionFrequency") ?: "ONCE_A_WEEK"
+                                val subscriptionExpiryTimestamp = userDoc.getTimestamp("subscriptionExpiry")
+                                val subscriptionExpiry = subscriptionExpiryTimestamp?.toDate()?.time ?: 0L
+                                val now = System.currentTimeMillis()
+
+                                if (subscriptionExpiry < now) {
+                                    Toast.makeText(requireContext(), "Subscription expired. Please renew.", Toast.LENGTH_LONG).show()
+                                    return@addOnSuccessListener
+                                }
+
+                                // Check booking limit for subscription and week of lesson
+                                canBookLesson(userId, subscriptionFrequency, currentLesson.schedule.date) { canBook ->
+                                    if (canBook) {
+                                        bookLesson(currentLesson)
+                                    } else {
+                                        Toast.makeText(requireContext(), "You have reached the booking limit for your subscription this week.", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(requireContext(), "Failed to check subscription", Toast.LENGTH_SHORT).show()
+                            }
                     }
                 }
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to load lesson", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun canBookLesson(userId: String, subscriptionFrequency: String, lessonDateStr: String, callback: (Boolean) -> Unit) {
+        val maxLessons = getMaxLessonsForSubscription(subscriptionFrequency)
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val lessonDate = LocalDate.parse(lessonDateStr, formatter)
+
+        // Calculate start and end of week (Sunday to Saturday) for the lesson date
+        val startOfWeek = lessonDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+        val endOfWeek = lessonDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))
+
+        firestore.collection("bookings")
+            .whereEqualTo("userId", userId)
+            .get()
+            .addOnSuccessListener { bookingsSnapshot ->
+                val bookingsInWeek = bookingsSnapshot.documents.count { doc ->
+                    val timestamp = doc.getLong("timestamp") ?: 0L
+                    // Convert timestamp to LocalDate
+                    val bookingDate = LocalDate.ofEpochDay(timestamp / (24 * 60 * 60 * 1000))
+
+                    // Check if bookingDate falls within the lesson's week
+                    !bookingDate.isBefore(startOfWeek) && !bookingDate.isAfter(endOfWeek)
+                }
+                callback(bookingsInWeek < maxLessons)
+            }
+            .addOnFailureListener {
+                callback(false)
+            }
+    }
+
+    // Returns max allowed bookings per week for subscription type
+    private fun getMaxLessonsForSubscription(subscriptionFrequency: String): Int {
+        return when (subscriptionFrequency) {
+            "ONCE_A_WEEK" -> 1
+            "TWICE_A_WEEK" -> 2
+            "THREE_TIMES_A_WEEK" -> 3
+            else -> 1
+        }
     }
 
     private fun bookLesson(lesson: Lesson) {
@@ -80,6 +156,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
         }
 
         val bookingsRef = firestore.collection("bookings")
+        // Check if user already booked this lesson
         bookingsRef
             .whereEqualTo("lessonId", lesson.classId)
             .whereEqualTo("userId", userId)
@@ -100,6 +177,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
 
                         val lessonRef = firestore.collection("lessons").document(lesson.classId)
 
+                        // Safely update booked count and create booking document
                         firestore.runTransaction { transaction ->
                             val snapshot = transaction.get(lessonRef)
                             val currentBooked = snapshot.getLong("bookedCount") ?: 0
@@ -109,10 +187,12 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
                                 throw Exception("Lesson is full")
                             }
 
+                            // Increment booked count
                             transaction.update(lessonRef, "bookedCount", currentBooked + 1)
 
-                            val calendarEventId = addEventToCalendarAndReturnId(lesson)
+                            val calendarEventId = addEventToCalendarAndReturnId(lesson) // Add to calendar
 
+                            // Create booking document with additional info
                             val bookingData = mapOf(
                                 "userId" to userId,
                                 "lessonId" to lesson.classId,
@@ -174,8 +254,9 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
             }
 
             val startMillis = calendar.timeInMillis
-            val endMillis = startMillis + 60 * 60 * 1000
+            val endMillis = startMillis + 60 * 60 * 1000 // 1-hour duration
 
+            // Query for the primary calendar ID on device
             val projection = arrayOf(
                 CalendarContract.Calendars._ID,
                 CalendarContract.Calendars.CALENDAR_DISPLAY_NAME
@@ -201,6 +282,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
                     put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
                 }
 
+                // Insert event into calendar
                 val uri = requireContext().contentResolver.insert(
                     CalendarContract.Events.CONTENT_URI,
                     values
@@ -213,6 +295,7 @@ class LessonDetailsFragment : Fragment(R.layout.fragment_lesson_details) {
         return null
     }
 
+    // Handle permission request results
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,

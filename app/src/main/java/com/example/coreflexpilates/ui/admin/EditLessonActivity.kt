@@ -18,36 +18,42 @@ class EditLessonActivity : AppCompatActivity() {
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var lessonId: String
 
-    private val trainerNameList = mutableListOf<String>()                   // for spinner
-    private val trainerNameToIdMap = mutableMapOf<String, String>()        // name → id
-    private val trainerIdToNameMap = mutableMapOf<String, String>()        // id → name
+    private val trainerNameList = mutableListOf<String>()
+    private val trainerNameToIdMap = mutableMapOf<String, String>()
+    private val trainerIdToNameMap = mutableMapOf<String, String>()
+
     private val lessonLevels = listOf("choose level...", "PILATES | beginners", "PILATES +| intermediate", "PILATES ++| advanced")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityAddLessonBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Enable back button in the action bar
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         lessonId = intent.getStringExtra("lessonId") ?: return
-
         setupLessonLevelSpinner()
         setupPickers()
         loadTrainers {
             loadLesson()
         }
 
+        // Save button
         binding.buttonSaveLesson.setOnClickListener {
             updateLesson()
         }
     }
 
+    // Spinner for selecting lesson level
     private fun setupLessonLevelSpinner() {
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, lessonLevels)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerLessonLevel.adapter = adapter
     }
 
+    // Load trainer documents
     private fun loadTrainers(onComplete: () -> Unit) {
         firestore.collection("trainers")
             .get()
@@ -56,6 +62,7 @@ class EditLessonActivity : AppCompatActivity() {
                 trainerNameToIdMap.clear()
                 trainerIdToNameMap.clear()
 
+                // Extract trainer names and IDs
                 for (doc in snapshot) {
                     val name = doc.getString("name")
                     val id = doc.id
@@ -74,6 +81,7 @@ class EditLessonActivity : AppCompatActivity() {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 binding.spinnerTrainer.adapter = adapter
 
+                // Invoke completion callback after loading trainers
                 onComplete()
             }
             .addOnFailureListener {
@@ -82,17 +90,20 @@ class EditLessonActivity : AppCompatActivity() {
             }
     }
 
+    // Show date and time picker dialogs
     private fun setupPickers() {
         binding.editDate.setOnClickListener { showDatePicker() }
         binding.editTime.setOnClickListener { showTimePicker() }
     }
 
+    // Load the existing lesson details
     private fun loadLesson() {
         firestore.collection("lessons").document(lessonId)
             .get()
             .addOnSuccessListener { doc ->
                 val lesson = doc.toObject(Lesson::class.java)
                 if (lesson != null) {
+                    // Set lesson level spinner selection by matching lesson title
                     val titleIndex = lessonLevels.indexOf(lesson.title)
                     if (titleIndex != -1) {
                         binding.spinnerLessonLevel.setSelection(titleIndex)
@@ -102,7 +113,7 @@ class EditLessonActivity : AppCompatActivity() {
                     binding.editTime.setText(lesson.schedule.time)
                     binding.editCapacity.setText(lesson.capacity.toString())
 
-                    // get trainer name from ID
+                    // Set trainer spinner selection based on trainerId
                     val trainerName = trainerIdToNameMap[lesson.trainerId]
                     val trainerIndex = trainerNameList.indexOf(trainerName)
                     if (trainerIndex != -1) {
@@ -116,6 +127,7 @@ class EditLessonActivity : AppCompatActivity() {
             }
     }
 
+    // Validate inputs and update Firestore document with new lesson
     private fun updateLesson() {
         val title = binding.spinnerLessonLevel.selectedItem.toString()
         val date = binding.editDate.text.toString().trim()
@@ -136,7 +148,6 @@ class EditLessonActivity : AppCompatActivity() {
             Toast.makeText(this, "Capacity must be a positive number", Toast.LENGTH_SHORT).show()
             return
         }
-
         val updatedLesson = Lesson(
             title = title,
             schedule = Schedule(date = date, day = "", time = time),
@@ -146,6 +157,7 @@ class EditLessonActivity : AppCompatActivity() {
             classId = lessonId
         )
 
+        // Save updated lesson to Firestore
         firestore.collection("lessons").document(lessonId)
             .set(updatedLesson)
             .addOnSuccessListener {
@@ -157,6 +169,7 @@ class EditLessonActivity : AppCompatActivity() {
             }
     }
 
+    // Show date picker dialog
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
         val year = calendar.get(Calendar.YEAR)
@@ -164,21 +177,23 @@ class EditLessonActivity : AppCompatActivity() {
         val day = calendar.get(Calendar.DAY_OF_MONTH)
 
         DatePickerDialog(this, { _, y, m, d ->
-            val dateStr = "%04d-%02d-%02d".format(y, m + 1, d)
+            val dateStr = "%04d-%02d-%02d".format(y, m + 1, d)  // Format yyyy-MM-dd
             binding.editDate.setText(dateStr)
         }, year, month, day).show()
     }
 
+    // Show time picker dialog
     private fun showTimePicker() {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
 
         TimePickerDialog(this, { _, h, m ->
-            val timeStr = "%02d:%02d".format(h, m)
+            val timeStr = "%02d:%02d".format(h, m)  // Format HH:mm
             binding.editTime.setText(timeStr)
         }, hour, minute, true).show()
     }
+
 
     override fun onSupportNavigateUp(): Boolean {
         finish()

@@ -11,10 +11,11 @@ import com.example.coreflexpilates.model.Lesson
 
 class LessonAdapter(
     private val isAdmin: Boolean = false,
-    private val trainerNameMap: Map<String, String> = emptyMap(),
-    private val onEditClick: ((Lesson) -> Unit)? = null,
-    private val onDeleteClick: ((Lesson) -> Unit)? = null,
-    private val onInviteClick: ((Lesson) -> Unit)? = null  // הוספתי פרמטר חדש לכפתור הזמנה
+    private val trainerNameMap: Map<String, String> = emptyMap(), // Map from trainerId to trainer name
+    private val onEditClick: ((Lesson) -> Unit)? = null,       // Callback for edit button (admin)
+    private val onDeleteClick: ((Lesson) -> Unit)? = null,     // Callback for delete button (admin)
+    private val onInviteClick: ((Lesson) -> Unit)? = null,     // Callback for invite button (user)
+    private val onLessonClick: ((Lesson) -> Unit)? = null      // Callback for clicking on a lesson item (user)
 ) : RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
 
     private val lessons = mutableListOf<Lesson>()
@@ -43,6 +44,7 @@ class LessonAdapter(
             "${lesson.schedule.date} · ${lesson.schedule.time} · ${lesson.bookedCount}/${lesson.capacity}"
 
         if (isAdmin) {
+            // Show admin buttons and hide invite button
             holder.buttonEdit?.visibility = View.VISIBLE
             holder.buttonDelete?.visibility = View.VISIBLE
             holder.buttonInvite?.visibility = View.GONE
@@ -50,20 +52,17 @@ class LessonAdapter(
             holder.buttonEdit?.setOnClickListener {
                 onEditClick?.invoke(lesson)
             }
-
             holder.buttonDelete?.setOnClickListener {
                 onDeleteClick?.invoke(lesson)
             }
-
         } else {
+            // Hide admin buttons and show invite button for normal users
             holder.buttonEdit?.visibility = View.GONE
             holder.buttonDelete?.visibility = View.GONE
             holder.buttonInvite?.visibility = View.VISIBLE
-
             holder.itemView.setOnClickListener {
-                // ניווט לדיטיילס - אפשר גם להעביר דרך onEditClick אם רוצים
+                onLessonClick?.invoke(lesson)
             }
-
             holder.buttonInvite?.setOnClickListener {
                 onInviteClick?.invoke(lesson)
             }
@@ -72,6 +71,7 @@ class LessonAdapter(
 
     override fun getItemCount(): Int = lessons.size
 
+    // Update the lesson list and refresh the RecyclerView
     fun updateData(newLessons: List<Lesson>) {
         lessons.clear()
         lessons.addAll(newLessons)

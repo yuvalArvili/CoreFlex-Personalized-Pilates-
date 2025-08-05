@@ -44,29 +44,33 @@ class InviteFriendsFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Setup toolbar back navigation
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
-
         adapter = InviteFriendsAdapter(friends) { friend ->
             sendInvitation(friend.uid)
         }
 
+        // Setup RecyclerView for displaying friends list
         binding.recyclerViewInviteFriends.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewInviteFriends.adapter = adapter
 
+        // Load the current user's friends from Firestore
         loadFriends()
     }
 
     private fun loadFriends() {
         val currentUserId = auth.currentUser?.uid ?: return
 
+        // Query friendships where current user is user1
         db.collection("friendships")
             .whereEqualTo("user1Id", currentUserId)
             .get()
             .addOnSuccessListener { result1 ->
                 val friendIds = result1.map { it.getString("user2Id") ?: "" }.toMutableSet()
 
+                // Query friendships where current user is user2
                 db.collection("friendships")
                     .whereEqualTo("user2Id", currentUserId)
                     .get()
@@ -75,6 +79,7 @@ class InviteFriendsFragment : Fragment() {
 
                         if (friendIds.isEmpty()) return@addOnSuccessListener
 
+                        // Get User documents for all friend IDs
                         db.collection("users")
                             .whereIn("uid", friendIds.toList())
                             .get()
@@ -89,6 +94,7 @@ class InviteFriendsFragment : Fragment() {
             }
     }
 
+    // Send lesson invitation
     private fun sendInvitation(receiverId: String) {
         val senderId = auth.currentUser?.uid ?: return
 
@@ -102,6 +108,7 @@ class InviteFriendsFragment : Fragment() {
             .add(invitation)
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Invitation sent", Toast.LENGTH_SHORT).show()
+                // After sending invitation, send push notification
                 sendInvitationNotification(receiverId)
             }
             .addOnFailureListener {
@@ -109,6 +116,7 @@ class InviteFriendsFragment : Fragment() {
             }
     }
 
+    // Send push notification to invited friend
     private fun sendInvitationNotification(receiverId: String) {
         db.collection("users").document(receiverId)
             .get()
@@ -142,10 +150,9 @@ class InviteFriendsFragment : Fragment() {
             }
     }
 
-
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 }
+

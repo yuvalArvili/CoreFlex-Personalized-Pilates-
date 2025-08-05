@@ -39,19 +39,21 @@ class FriendLessonsFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Set title showing friend's name
         binding.friendLessonsTitle.text = "$friendName's Lessons"
 
+        // Setup toolbar back button
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
+
         adapter = LessonAdapter(
             isAdmin = false,
-            onEditClick = { lesson ->
-                // ניווט לדיטיילס של שיעור אם תרצי
-            },
+            onEditClick = {},
             onDeleteClick = {},
             onInviteClick = { lesson ->
+                // Navigate to invite friends screen for the selected lesson
                 val action = FriendLessonsFragmentDirections.actionFriendLessonsFragmentToInviteFriendsFragment(lesson.classId)
                 findNavController().navigate(action)
             }
@@ -59,14 +61,17 @@ class FriendLessonsFragment : Fragment() {
         binding.recyclerViewFriendLessons.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewFriendLessons.adapter = adapter
 
+        // Load the friend's booked lessons from Firestore
         loadLessons()
     }
 
     private fun loadLessons() {
+        // Query bookings where userId matches friendId
         db.collection("bookings")
             .whereEqualTo("userId", friendId)
             .get()
             .addOnSuccessListener { result ->
+                // Extract lessons from bookings
                 val lessonIds = result.mapNotNull { it.getString("lessonId") }
 
                 if (lessonIds.isEmpty()) return@addOnSuccessListener
@@ -79,7 +84,7 @@ class FriendLessonsFragment : Fragment() {
                         for (doc in lessonDocs) {
                             doc.toObject(Lesson::class.java)?.let { lessons.add(it) }
                         }
-                        adapter.updateData(lessons.toList())
+                        adapter.updateData(lessons.toList()) // Update adapter with fetched lessons
                     }
             }
     }

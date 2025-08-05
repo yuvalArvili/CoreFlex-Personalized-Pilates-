@@ -12,11 +12,12 @@ import com.example.coreflexpilates.model.User
 class FindFriendsAdapter(
     private var users: List<User>,
     private val friendIds: Set<String>,
-    private val onAddClick: (User) -> Unit
+    private val onAddClick: (User) -> Unit       // Callback when the "Follow" button is clicked
 ) : RecyclerView.Adapter<FindFriendsAdapter.UserViewHolder>() {
 
     private val requestedUserIds = mutableSetOf<String>()
 
+    // Update the displayed list
     fun updateList(newUsers: List<User>) {
         users = newUsers
         notifyDataSetChanged()
@@ -39,22 +40,26 @@ class FindFriendsAdapter(
         holder.name.text = user.name
         holder.email.text = user.email
 
+
         when {
             friendIds.contains(user.uid) -> {
-                holder.addButton.text = "FRIEND"
+
+                holder.addButton.text = "FRIEND" // User is already a friend
                 holder.addButton.isEnabled = false
             }
             requestedUserIds.contains(user.uid) -> {
-                holder.addButton.text = "REQUESTED"
+                holder.addButton.text = "REQUESTED" // Friend request has already been sent
+
                 holder.addButton.isEnabled = false
             }
             else -> {
+                // User is not friend or requested yet
                 holder.addButton.text = "FOLLOW"
                 holder.addButton.isEnabled = true
                 holder.addButton.setOnClickListener {
                     requestedUserIds.add(user.uid)
                     notifyItemChanged(position)
-                    onAddClick(user)
+                    onAddClick(user)  // Invoke callback to send friend request
                 }
             }
         }
@@ -62,3 +67,4 @@ class FindFriendsAdapter(
 
     override fun getItemCount(): Int = users.size
 }
+

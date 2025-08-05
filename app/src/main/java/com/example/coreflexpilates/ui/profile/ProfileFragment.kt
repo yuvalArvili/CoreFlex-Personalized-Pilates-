@@ -1,42 +1,43 @@
 package com.example.coreflexpilates.ui.profile
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
 import com.example.coreflexpilates.AuthActivity
 import com.example.coreflexpilates.R
-import com.example.coreflexpilates.model.Lesson
-import com.example.coreflexpilates.model.Booking
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.Locale
+import com.google.firebase.storage.FirebaseStorage
 
 class ProfileFragment : Fragment() {
 
+    companion object {
+        private const val REQUEST_CODE_SELECT_IMAGE = 101 // Request code for image picker intent
+    }
+
     private lateinit var editName: EditText
     private lateinit var spinnerLevel: Spinner
-    private lateinit var editGoal: EditText
     private lateinit var buttonSave: Button
-    private lateinit var bookingsRecyclerView: RecyclerView
-    private lateinit var noLessonsText: TextView
-    private lateinit var buttonUpcoming: MaterialButton
-    private lateinit var buttonPast: MaterialButton
+    private lateinit var buttonSelectImage: Button
+    private lateinit var buttonDelete: ImageButton
+    private lateinit var imageProfile: ShapeableImageView
     private lateinit var requestButton: Button
-
+    private lateinit var buttonLogout: Button
+    private lateinit var textSubscriptionType: TextView
+    private lateinit var textSubscriptionExpiry: TextView
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
-
-    private val bookedLessons = mutableListOf<Lesson>()
-    private lateinit var adapter: BookedLessonAdapter
-
-    private var isShowingUpcoming = true
+    private val storage = FirebaseStorage.getInstance()
+    private var selectedImageUri: Uri? = null
+    private var currentProfileImageUrl: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,45 +47,36 @@ class ProfileFragment : Fragment() {
 
         editName = view.findViewById(R.id.editName)
         spinnerLevel = view.findViewById(R.id.spinnerLevel)
-        editGoal = view.findViewById(R.id.editGoal)
         buttonSave = view.findViewById(R.id.buttonSave)
-        bookingsRecyclerView = view.findViewById(R.id.recyclerViewBookings)
-        noLessonsText = view.findViewById(R.id.textNoLessons)
-        buttonUpcoming = view.findViewById(R.id.buttonUpcoming)
-        buttonPast = view.findViewById(R.id.buttonPast)
+        buttonSelectImage = view.findViewById(R.id.buttonSelectImage)
+        buttonDelete = view.findViewById(R.id.buttonDelete)
+        imageProfile = view.findViewById(R.id.imageProfile)
         requestButton = view.findViewById(R.id.requestButton)
+        buttonLogout = view.findViewById(R.id.buttonLogout)
+        textSubscriptionType = view.findViewById(R.id.textSubscriptionType)
+        textSubscriptionExpiry = view.findViewById(R.id.textSubscriptionExpiry)
 
         setupLevelSpinner()
         loadUserProfile()
-        setupRecyclerView()
+        buttonSelectImage.setOnClickListener {
+            openImagePicker()
+        }
 
-        // Set default state
-        buttonUpcoming.isSelected = true
-        buttonPast.isSelected = false
-        isShowingUpcoming = true
+        // Handle delete image button click
+        buttonDelete.setOnClickListener {
+            selectedImageUri = null
+            imageProfile.setImageResource(R.drawable.baseline_perm_identity_24)
+            currentProfileImageUrl = ""
 
-        loadBookedLessons()
+            Toast.makeText(requireContext(), "Profile image deleted locally. Save to apply changes.", Toast.LENGTH_SHORT).show()
+        }
 
         buttonSave.setOnClickListener {
             saveUserProfile()
         }
 
-        buttonUpcoming.setOnClickListener {
-            isShowingUpcoming = true
-            buttonUpcoming.isSelected = true
-            buttonPast.isSelected = false
-            loadBookedLessons()
-        }
-
-        buttonPast.setOnClickListener {
-            isShowingUpcoming = false
-            buttonUpcoming.isSelected = false
-            buttonPast.isSelected = true
-            loadBookedLessons()
-        }
-
-        val logoutButton = view.findViewById<Button>(R.id.buttonLogout)
-        logoutButton.setOnClickListener {
+        // Handle logout button click with dialog
+        buttonLogout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle("Logout")
                 .setMessage("Are you sure you want to logout?")
@@ -98,6 +90,7 @@ class ProfileFragment : Fragment() {
                 .show()
         }
 
+        // Navigate to friend requests screen
         requestButton.setOnClickListener {
             findNavController().navigate(R.id.friendRequestsFragment)
         }
@@ -105,6 +98,7 @@ class ProfileFragment : Fragment() {
         return view
     }
 
+    // Sets up the user level spinner with predefined levels
     private fun setupLevelSpinner() {
         val levels = arrayOf("Beginner", "Intermediate", "Advanced")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, levels)
@@ -120,86 +114,96 @@ class ProfileFragment : Fragment() {
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     editName.setText(doc.getString("name") ?: "")
-                    editGoal.setText(doc.getString("goal") ?: "")
 
                     val level = doc.getString("level") ?: "Beginner"
                     val position = (spinnerLevel.adapter as ArrayAdapter<String>).getPosition(level)
                     spinnerLevel.setSelection(position)
+
+                    currentProfileImageUrl = doc.getString("profileImageUrl")
+                    if (!currentProfileImageUrl.isNullOrEmpty()) {
+                        Glide.with(this)
+                            .load(currentProfileImageUrl)
+                            .placeholder(R.drawable.baseline_perm_identity_24)
+                            .circleCrop()
+                            .into(imageProfile)
+                    } else {
+                        imageProfile.setImageResource(R.drawable.baseline_perm_identity_24)
+                    }
+
+                    val subscriptionType = doc.getString("subscriptionFrequency") ?: "No subscription"
+                    textSubscriptionType.text = "Subscription Type: $subscriptionType"
+
+                    val expiryTimestamp = doc.getTimestamp("subscriptionExpiry")
+                    if (expiryTimestamp != null) {
+                        val expiryDate = expiryTimestamp.toDate()
+                        val formattedDate = android.text.format.DateFormat.format("dd/MM/yyyy", expiryDate)
+                        textSubscriptionExpiry.text = "Subscription Expiry: $formattedDate"
+                    } else {
+                        textSubscriptionExpiry.text = "Subscription Expiry: N/A"
+                    }
                 }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to load user data", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun saveUserProfile() {
         val userId = auth.currentUser?.uid ?: return
 
-        val data = mapOf(
-            "name" to editName.text.toString(),
-            "goal" to editGoal.text.toString(),
-            "level" to spinnerLevel.selectedItem.toString()
-        )
+        fun saveProfile(imageUrl: String?) {
+            val data = hashMapOf(
+                "name" to editName.text.toString(),
+                "level" to spinnerLevel.selectedItem.toString(),
+                "profileImageUrl" to (imageUrl ?: "")
+            )
 
-        firestore.collection("users").document(userId)
-            .set(data)
-            .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Saved successfully!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Save failed", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun setupRecyclerView() {
-        adapter = BookedLessonAdapter(bookedLessons) {
-            loadBookedLessons()
-        }
-        bookingsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        bookingsRecyclerView.adapter = adapter
-    }
-
-    private fun loadBookedLessons() {
-        val userId = auth.currentUser?.uid ?: return
-
-        firestore.collection("bookings")
-            .whereEqualTo("userId", userId)
-            .get()
-            .addOnSuccessListener { bookingDocs ->
-                val bookings = bookingDocs.mapNotNull { it.toObject(Booking::class.java) }
-                val lessonIds = bookings.mapNotNull { it.lessonId }
-
-                if (lessonIds.isEmpty()) {
-                    bookedLessons.clear()
-                    adapter.notifyDataSetChanged()
-                    noLessonsText.visibility = View.VISIBLE
-                    bookingsRecyclerView.visibility = View.GONE
-                    return@addOnSuccessListener
+            firestore.collection("users").document(userId)
+                .update(data as Map<String, Any>)
+                .addOnSuccessListener {
+                    Toast.makeText(requireContext(), "Saved successfully!", Toast.LENGTH_SHORT).show()
+                    currentProfileImageUrl = imageUrl
                 }
+                .addOnFailureListener {
+                    Toast.makeText(requireContext(), "Save failed", Toast.LENGTH_SHORT).show()
+                }
+        }
 
-                firestore.collection("lessons")
-                    .whereIn("classId", lessonIds.take(10))
-                    .get()
-                    .addOnSuccessListener { classDocs ->
-                        bookedLessons.clear()
-                        val now = System.currentTimeMillis()
-                        val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        if (selectedImageUri != null) {
+            // Upload new image to Firebase Storage
+            val ref = storage.reference.child("users/$userId/profile.jpg")
+            ref.putFile(selectedImageUri!!)
+                .continueWithTask { task -> ref.downloadUrl }
+                .addOnSuccessListener { uri ->
+                    saveProfile(uri.toString())
+                }
+                .addOnFailureListener {
+                    Toast.makeText(requireContext(), "Image upload failed", Toast.LENGTH_SHORT).show()
+                }
+        } else {
+            // No new image selected, just update other profile data
+            saveProfile(currentProfileImageUrl)
+        }
+    }
 
-                        for (doc in classDocs) {
-                            val lesson = doc.toObject(Lesson::class.java)
-                            val lessonDateTime = "${lesson.schedule.date} ${lesson.schedule.time}"
+    // Opens image picker to select profile picture
+    private fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "image/*"
+        startActivityForResult(intent, REQUEST_CODE_SELECT_IMAGE)
+    }
 
-                            val lessonTime = formatter.parse(lessonDateTime)?.time ?: continue
-                            val isFuture = lessonTime > now
-
-                            if ((isShowingUpcoming && isFuture) || (!isShowingUpcoming && !isFuture)) {
-                                bookedLessons.add(lesson)
-                            }
-                        }
-
-                        bookedLessons.sortBy { it.schedule.date + it.schedule.time }
-
-                        adapter.notifyDataSetChanged()
-                        noLessonsText.visibility = if (bookedLessons.isEmpty()) View.VISIBLE else View.GONE
-                        bookingsRecyclerView.visibility = if (bookedLessons.isEmpty()) View.GONE else View.VISIBLE
-                    }
+    // Handle image picker result
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_SELECT_IMAGE && resultCode == Activity.RESULT_OK) {
+            selectedImageUri = data?.data
+            selectedImageUri?.let {
+                Glide.with(this)
+                    .load(it)
+                    .circleCrop()
+                    .into(imageProfile)
             }
+        }
     }
 }

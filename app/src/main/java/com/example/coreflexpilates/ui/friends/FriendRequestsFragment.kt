@@ -1,6 +1,7 @@
 package com.example.coreflexpilates.ui.friends
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +23,7 @@ class FriendRequestsFragment : Fragment() {
     private val auth = FirebaseAuth.getInstance()
 
     private val requests = mutableListOf<FriendRequest>()
-    private val userNames = mutableMapOf<String, String>() // Map to store uid -> name
+    private val userNames = mutableMapOf<String, String>()
     private lateinit var adapter: FriendRequestsAdapter
 
     override fun onCreateView(
@@ -36,6 +37,7 @@ class FriendRequestsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Setup toolbar back button
         val toolbar = binding.toolbar
         toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -48,10 +50,11 @@ class FriendRequestsFragment : Fragment() {
         binding.recyclerViewRequests.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewRequests.adapter = adapter
 
+        // Load pending friend requests on startup
         loadPendingRequests()
     }
 
-
+    // Load all users
     private fun loadUserNames(onComplete: () -> Unit) {
         firestore.collection("users")
             .get()
@@ -59,6 +62,7 @@ class FriendRequestsFragment : Fragment() {
                 userNames.clear()
                 for (doc in result) {
                     val user = doc.toObject(User::class.java)
+                    Log.d("FriendRequests", "Loading user: ${user.uid} -> ${user.name}")
                     userNames[user.uid] = user.name
                 }
                 onComplete()
@@ -69,6 +73,8 @@ class FriendRequestsFragment : Fragment() {
             }
     }
 
+
+    // Load friend requests
     private fun loadPendingRequests() {
         val currentUserId = auth.currentUser?.uid ?: return
         firestore.collection("friend_requests")
@@ -80,9 +86,12 @@ class FriendRequestsFragment : Fragment() {
                 for (doc in snapshot.documents) {
                     val req = doc.toObject(FriendRequest::class.java)
                     if (req != null) {
-                        requests.add(req.copy(id = doc.id))
+                        requests.add(req.copy(id = doc.id))  // Add Firestore doc id for reference
                     }
                 }
+                Log.d("FriendRequests1", "Loaded ${requests.size} pending requests")
+
+                // After loading requests, load user names and update adapter
                 loadUserNames {
                     adapter.updateRequests(requests)
                     binding.textNoRequests.visibility = if (requests.isEmpty()) View.VISIBLE else View.GONE
@@ -93,6 +102,7 @@ class FriendRequestsFragment : Fragment() {
             }
     }
 
+    // Accept a friend request
     private fun acceptRequest(request: FriendRequest) {
         firestore.collection("friend_requests").document(request.id)
             .update("status", "accepted")
@@ -116,6 +126,7 @@ class FriendRequestsFragment : Fragment() {
             }
     }
 
+    // Decline a friend request
     private fun declineRequest(request: FriendRequest) {
         firestore.collection("friend_requests").document(request.id)
             .update("status", "declined")

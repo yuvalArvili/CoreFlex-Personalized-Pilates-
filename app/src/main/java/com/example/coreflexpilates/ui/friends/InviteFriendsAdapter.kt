@@ -8,7 +8,7 @@ import com.example.coreflexpilates.model.User
 
 class InviteFriendsAdapter(
     private val friends: List<User>,
-    private val onInviteClick: (User) -> Unit
+    private val onInviteClick: (User) -> Unit  // Callback when invite button is clicked
 ) : RecyclerView.Adapter<InviteFriendsAdapter.FriendViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FriendViewHolder {
@@ -29,12 +29,15 @@ class InviteFriendsAdapter(
     inner class FriendViewHolder(private val binding: ItemInviteFriendBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        // Bind user info and set invite button click listener
         fun bind(friend: User) {
             binding.friendName.text = friend.name
             binding.friendEmail.text = friend.email
+
             binding.buttonInvite.setOnClickListener {
                 onInviteClick(friend)
             }
         }
     }
 }
+

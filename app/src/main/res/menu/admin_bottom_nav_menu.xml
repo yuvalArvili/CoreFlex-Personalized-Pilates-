@@ -8,4 +8,10 @@
         android:id="@+id/nav_trainers"
         android:icon="@drawable/baseline_perm_identity_24"
         android:title="Trainers" />
+
+    <item
+        android:id="@+id/nav_users"
+        android:icon="@drawable/outline_group_search_24"
+        android:title="Users" />
+
 </menu>

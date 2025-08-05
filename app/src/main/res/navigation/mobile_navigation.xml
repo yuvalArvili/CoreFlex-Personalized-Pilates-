@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@id/navigation_home">
 
     <!-- Home Fragment -->
     <fragment
@@ -12,16 +12,19 @@
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home">
 
-        <!-- Action to LessonDetailsFragment -->
+        <argument
+            android:name="isAdmin"
+            app:argType="boolean"
+            android:defaultValue="false" />
+
         <action
             android:id="@+id/action_homeFragment_to_lessonDetailsFragment"
             app:destination="@id/lessonDetailsFragment" />
-
-        <!-- Action to InviteFriendsFragment -->
         <action
             android:id="@+id/action_homeFragment_to_inviteFriendsFragment"
             app:destination="@id/inviteFriendsFragment" />
     </fragment>
+
 
     <!-- Profile Fragment -->
     <fragment
@@ -29,21 +32,25 @@
         android:name="com.example.coreflexpilates.ui.profile.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile">
-
-        <!-- Action to FriendRequestsFragment -->
         <action
             android:id="@+id/action_profileFragment_to_friendRequestsFragment"
             app:destination="@id/friendRequestsFragment" />
     </fragment>
 
-    <!-- Notifications Fragment -->
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="com.example.coreflexpilates.ui.notifications.NotificationsFragment"
-        android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        android:id="@+id/adminTrainerListFragment"
+        android:name="com.example.coreflexpilates.ui.admin.AdminTrainerListFragment"
+        android:label="Admin Trainer List"
+        tools:layout="@layout/fragment_admin_trainer_list" />
 
-    <!-- Explore (Friends) Fragment -->
+    <!-- Lessons Fragment -->
+    <fragment
+        android:id="@+id/navigation_lessons"
+        android:name="com.example.coreflexpilates.ui.lesson.LessonsFragment"
+        android:label="Lessons"
+        tools:layout="@layout/fragment_lessons" />
+
+    <!-- Explore / Friends Fragment -->
     <fragment
         android:id="@+id/navigation_explore"
         android:name="com.example.coreflexpilates.ui.friends.FriendsListFragment"
@@ -83,6 +90,32 @@
         tools:layout="@layout/fragment_trainer_details">
         <argument
             android:name="trainerId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Admin Users Fragment -->
+    <fragment
+        android:id="@+id/adminUsersFragment"
+        android:name="com.example.coreflexpilates.ui.admin.AdminUsersFragment"
+        android:label="Users Management"
+        tools:layout="@layout/fragment_admin_users">
+        <action
+            android:id="@+id/action_adminUsersFragment_to_userSubscriptionFragment"
+            app:destination="@id/userSubscriptionFragment">
+            <argument
+                android:name="userId"
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <!-- User Subscription Fragment -->
+    <fragment
+        android:id="@+id/userSubscriptionFragment"
+        android:name="com.example.coreflexpilates.ui.admin.UserSubscriptionFragment"
+        android:label="User Subscription"
+        tools:layout="@layout/fragment_user_subscription">
+        <argument
+            android:name="userId"
             app:argType="string" />
     </fragment>
 

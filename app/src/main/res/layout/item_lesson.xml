@@ -29,7 +29,7 @@
                 android:layout_weight="1"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/black" />
 
             <ImageButton
                 android:id="@+id/buttonCancelBooking"
@@ -61,14 +61,14 @@
             android:id="@+id/lessonTrainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
+            android:textColor="@color/black"
             android:layout_marginTop="6dp" />
 
         <TextView
             android:id="@+id/lessonDescription"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#666666"
+            android:textColor="@color/grey"
             android:textSize="14sp"
             android:layout_marginTop="2dp" />
 

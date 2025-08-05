@@ -30,24 +30,28 @@ class AddLessonActivity : AppCompatActivity() {
         "PILATES ++| Advanced" to "Advanced"
     )
 
-    private val trainerMap = mutableMapOf<String, List<String>>()  // name -> specialties
-    private val trainerIdMap = mutableMapOf<String, String>()      // name -> trainerId
-    private val trainerNamesAll = mutableListOf<String>()          // list of names for spinner
+    private val trainerMap = mutableMapOf<String, List<String>>()
+    private val trainerIdMap = mutableMapOf<String, String>()
+    private val trainerNamesAll = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddLessonBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // Show back arrow in action bar
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        // Setup the lesson level spinner and load trainers
         setupLessonLevelSpinner()
         loadTrainersFromFirestore()
 
+        // Set click listeners for date/time pickers and save button
         binding.editDate.setOnClickListener { showDatePicker() }
         binding.editTime.setOnClickListener { showTimePicker() }
         binding.buttonSaveLesson.setOnClickListener { saveLesson() }
     }
 
+    // Initialize lesson level spinner with levels and listener to update trainers
     private fun setupLessonLevelSpinner() {
         val adapter = ArrayAdapter(
             this,
@@ -57,6 +61,7 @@ class AddLessonActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerLessonLevel.adapter = adapter
 
+        // When a level is selected update trainer spinner
         binding.spinnerLessonLevel.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedLevel = lessonLevels[position]
@@ -67,6 +72,7 @@ class AddLessonActivity : AppCompatActivity() {
         }
     }
 
+    // Loads trainers from Firestore
     private fun loadTrainersFromFirestore() {
         firestore.collection("trainers")
             .get()
@@ -88,13 +94,16 @@ class AddLessonActivity : AppCompatActivity() {
             }
     }
 
+    // Updates trainer spinner
     private fun updateTrainerSpinner(selectedLevel: String) {
         trainerNamesAll.clear()
+        // Default choice in spinner
         trainerNamesAll.add("choose trainer...")
 
         if (selectedLevel != "choose level...") {
             val requiredSpecialty = levelToSpecialtyMap[selectedLevel]
             if (requiredSpecialty != null) {
+                // Filter trainers who have the required specialty for the selected level
                 val filtered = trainerMap.filterValues { it.contains(requiredSpecialty) }.keys
                 trainerNamesAll.addAll(filtered.sorted())
             }
@@ -109,6 +118,7 @@ class AddLessonActivity : AppCompatActivity() {
         binding.spinnerTrainer.adapter = trainerAdapter
     }
 
+    // Show date picker dialog
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
         val dialog = DatePickerDialog(
@@ -121,6 +131,7 @@ class AddLessonActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // Show time picker dialog
     private fun showTimePicker() {
         val calendar = Calendar.getInstance()
         val dialog = TimePickerDialog(
@@ -133,6 +144,7 @@ class AddLessonActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // Validates inputs and saves the new lesson in Firestore
     private fun saveLesson() {
         val title = binding.spinnerLessonLevel.selectedItem.toString()
         val date = binding.editDate.text.toString().trim()
@@ -171,12 +183,13 @@ class AddLessonActivity : AppCompatActivity() {
             classId = classId
         )
 
+        // Save the lesson in Firestore lessons collection
         firestore.collection("lessons")
             .document(classId)
             .set(lesson)
             .addOnSuccessListener {
                 Toast.makeText(this, "Lesson added successfully", Toast.LENGTH_SHORT).show()
-                finish()
+                finish()  // Close activity on success
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Failed to add lesson", Toast.LENGTH_SHORT).show()

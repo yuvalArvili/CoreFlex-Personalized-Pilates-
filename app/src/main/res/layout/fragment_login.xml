@@ -63,4 +63,15 @@
     android:clickable="true"
     android:focusable="true" />
 
+    <TextView
+        android:id="@+id/textForgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forgot Password?"
+        android:textColor="@color/register_link"
+        android:padding="8dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+
 </LinearLayout>

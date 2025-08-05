@@ -29,27 +29,29 @@ class TrainerDetailsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Set up back arrow
         binding.topAppBar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
-
         val trainerId = arguments?.getString("trainerId") ?: return
-        loadTrainerDetails(trainerId)
+        loadTrainerDetails(trainerId) // Load trainer data from Firestore
     }
 
     private fun loadTrainerDetails(trainerId: String) {
         firestore.collection("trainers").document(trainerId)
             .get()
             .addOnSuccessListener { document ->
+                // Convert Firestore document to Trainer model
                 val trainer = document.toObject(Trainer::class.java)
                 if (trainer != null) {
                     binding.trainerNameText.text = trainer.name
                     binding.trainerSpecialtiesText.text = "Specialties: ${trainer.specialties.joinToString()}"
 
-                    // Load image from imageUrl field (if exists)
                     trainer.imageUrl?.let { imageUrl ->
                         Glide.with(this)
                             .load(imageUrl)
+                            .circleCrop()
                             .into(binding.imageTrainer)
                     }
                 }
@@ -61,6 +63,7 @@ class TrainerDetailsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Clear binding reference to avoid memory leaks
         _binding = null
     }
 }

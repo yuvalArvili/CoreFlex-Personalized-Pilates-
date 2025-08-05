@@ -12,6 +12,7 @@ class AuthActivity : AppCompatActivity() {
         setContentView(R.layout.activity_auth)
         supportActionBar?.hide()
 
+        // On first creation, load the LoginFragment into the fragment container
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.auth_fragment_container, LoginFragment())

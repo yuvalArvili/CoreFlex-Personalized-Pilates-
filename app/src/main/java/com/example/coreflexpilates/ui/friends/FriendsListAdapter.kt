@@ -8,7 +8,7 @@ import com.example.coreflexpilates.model.User
 
 class FriendsListAdapter(
     private val friends: List<User>,
-    private val onShowLessonsClick: (User) -> Unit
+    private val onShowLessonsClick: (User) -> Unit      // Callback when "Show Lessons" button is clicked
 ) : RecyclerView.Adapter<FriendsListAdapter.FriendViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FriendViewHolder {
@@ -32,9 +32,11 @@ class FriendsListAdapter(
         fun bind(friend: User) {
             binding.friendName.text = friend.name
             binding.friendEmail.text = friend.email
+
             binding.buttonShowLessons.setOnClickListener {
                 onShowLessonsClick(friend)
             }
         }
     }
 }
+

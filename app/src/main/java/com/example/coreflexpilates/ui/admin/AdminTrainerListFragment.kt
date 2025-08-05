@@ -14,10 +14,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import android.widget.SearchView
 
 class AdminTrainerListFragment : Fragment() {
-
     private var _binding: FragmentAdminTrainerListBinding? = null
     private val binding get() = _binding!!
+
     private val db = FirebaseFirestore.getInstance()
+
     private val trainerList = mutableListOf<Trainer>()
     private lateinit var allTrainers: List<Trainer>
     private lateinit var adapter: AdminTrainerAdapter
@@ -36,23 +37,28 @@ class AdminTrainerListFragment : Fragment() {
         adapter = AdminTrainerAdapter(
             trainerList,
             onEditClick = { trainer ->
+                // Navigate to Edit Trainer with selected trainer
                 val intent = Intent(requireContext(), EditTrainerActivity::class.java)
                 intent.putExtra("trainerId", trainer.id)
                 startActivity(intent)
             },
-            onDeleteClick = { trainer -> deleteTrainer(trainer.id) }
+            onDeleteClick = { trainer ->
+                // Delete the selected trainer from Firestore
+                deleteTrainer(trainer.id)
+            }
         )
 
         binding.recyclerViewTrainers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTrainers.adapter = adapter
 
+        // Setup search input to filter trainers by name
         setupSearch()
         loadTrainers()
     }
 
     private fun setupSearch() {
         binding.searchViewTrainer.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = false
+            override fun onQueryTextSubmit(query: String?): Boolean = false // No action on submit
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 filterTrainers(newText ?: "")
@@ -62,9 +68,12 @@ class AdminTrainerListFragment : Fragment() {
     }
 
     private fun loadTrainers() {
+        // Fetch all trainers from Firestore
         db.collection("trainers").get()
             .addOnSuccessListener { result ->
+                // Convert documents to Trainer objects
                 allTrainers = result.mapNotNull { it.toObject(Trainer::class.java).apply { id = it.id } }
+                // Update displayed list
                 trainerList.clear()
                 trainerList.addAll(allTrainers)
                 adapter.notifyDataSetChanged()
@@ -75,20 +84,22 @@ class AdminTrainerListFragment : Fragment() {
     }
 
     private fun filterTrainers(query: String) {
+        // Filter trainers whose name contains the query string
         val filtered = allTrainers.filter {
             it.name.contains(query, ignoreCase = true)
         }
-
+        // Update the displayed list and refresh
         trainerList.clear()
         trainerList.addAll(filtered)
         adapter.notifyDataSetChanged()
     }
 
     private fun deleteTrainer(id: String) {
+        // Delete trainer document from Firestore by ID
         db.collection("trainers").document(id).delete()
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Trainer deleted", Toast.LENGTH_SHORT).show()
-                loadTrainers()
+                loadTrainers()  // Reload trainers list after deletion
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show()
@@ -100,3 +111,4 @@ class AdminTrainerListFragment : Fragment() {
         _binding = null
     }
 }
+

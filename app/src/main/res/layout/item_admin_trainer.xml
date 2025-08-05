@@ -10,12 +10,13 @@
         android:layout_gravity="center"
         android:background="@drawable/circle_gray_background">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/trainerImage"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:src="@drawable/baseline_perm_identity_24"
-        android:layout_marginStart="3dp" />
+        android:layout_gravity="center"
+        android:scaleType="centerCrop"
+        android:src="@drawable/baseline_perm_identity_24" />
     </FrameLayout>
 
     <LinearLayout

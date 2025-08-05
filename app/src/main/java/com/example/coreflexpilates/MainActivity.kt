@@ -15,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
     private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,13 +25,16 @@ class MainActivity : AppCompatActivity() {
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
 
+        // Get the currently signed-in user (if any)
         val currentUser = auth.currentUser
         val uid = currentUser?.uid
 
+        // Log user ID and email for debug
         Log.d("USER_CHECK", "UID: ${currentUser?.uid}")
         Log.d("USER_CHECK", "Email: ${currentUser?.email}")
 
         if (uid != null) {
+            // If user is signed in, fetch their document from Firestore 'users' collection
             FirebaseFirestore.getInstance().collection("users").document(uid)
                 .get()
                 .addOnSuccessListener { doc ->
@@ -49,15 +53,14 @@ class MainActivity : AppCompatActivity() {
                     showUserNavigation()
                 }
         } else {
-            // fallback
             showUserNavigation()
         }
     }
 
+    // Setup the bottom navigation view and navigation controller for regular users
     private fun showUserNavigation() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         val navView: BottomNavigationView = binding.navView
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         navView.setupWithNavController(navController)
